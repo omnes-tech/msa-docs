@@ -1,0 +1,134 @@
+---
+title: Interactive API Documentation
+description: Try the MSA API directly in your browser with our interactive documentation powered by Scalar.
+---
+
+import { ScalarAPI } from '../components/ScalarAPI';
+
+# Interactive API Documentation
+
+Explore and test the MSA API endpoints directly in your browser. This interactive documentation is powered by Scalar and provides a comprehensive view of all available endpoints, request/response schemas, and examples.
+
+## Features
+
+- **Try It Out**: Execute real API calls directly from the documentation
+- **Authentication Setup**: Configure your HSM/MPC credentials for testing
+- **Request/Response Examples**: See real-time examples in multiple formats
+- **Schema Validation**: Automatic validation of request payloads
+- **Multi-Language Examples**: Code samples in cURL, JavaScript, Python, and more
+
+## Getting Started
+
+1. **Set up your credentials** in the authentication section
+2. **Choose an endpoint** from the sidebar navigation
+3. **Fill in the required parameters** using the interactive forms
+4. **Execute the request** and see real-time responses
+
+<div className="mt-8">
+  <ScalarAPI />
+</div>
+
+## Quick Navigation
+
+### Wallet Management
+- **POST /predict** - Predict wallet addresses before creation
+- **POST /create** - Deploy new Account Abstraction wallets
+- **POST /check** - Verify wallet existence and status
+
+### Transaction Execution
+- **POST /execute** - Execute operations with human-readable parameters
+- **POST /executeEncoded** - Execute pre-encoded UserOperations
+- **POST /executePasskey** - Execute with passkey validation
+- **POST /estimateGas** - Estimate gas costs for operations
+
+### Contract Interaction
+- **POST /read** - Read smart contract state
+- **POST /receipt** - Get transaction receipts
+- **POST /filterEvent** - Filter blockchain events
+- **POST /getEvents** - Retrieve specific events
+
+### Utilities
+- **POST /sign** - Sign arbitrary messages
+- **POST /getSigner** - Get signer information
+- **POST /unstuck** - Resolve stuck transactions
+- **POST /passkeyHash** - Generate passkey hashes
+
+### Management
+- **POST /transactSigner** - Direct HSM/MPC transactions
+- **POST /addEvent** - Add custom event ABIs
+- **POST /addError** - Add custom error ABIs
+
+## Rate Limits
+
+The MSA API implements rate limiting to ensure fair usage:
+
+| Tier | Requests per Minute | Requests per Hour |
+|------|---------------------|-------------------|
+| Free | 60 | 1,000 |
+| Pro | 300 | 10,000 |
+| Enterprise | 1,000 | 50,000 |
+
+## Error Codes
+
+Common HTTP status codes and their meanings:
+
+| Code | Status | Description |
+|------|--------|-------------|
+| 200 | OK | Request successful |
+| 400 | Bad Request | Invalid request parameters |
+| 401 | Unauthorized | Invalid authentication credentials |
+| 422 | Unprocessable Entity | Request valid but execution failed |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Server Error | Server-side error |
+
+## Network Configurations
+
+### Supported Networks
+
+| Network | Chain ID | RPC Endpoint |
+|---------|----------|--------------|
+| Polygon Amoy (Testnet) | 80002 | `https://rpc-amoy.polygon.technology/` |
+| Polygon Mainnet | 137 | `https://polygon-rpc.com/` |
+| Base Sepolia (Testnet) | 84532 | `https://sepolia.base.org/` |
+| Base Mainnet | 8453 | `https://mainnet.base.org/` |
+
+### Contract Addresses
+
+Contact our team for the latest contract addresses on each supported network.
+
+## Authentication Examples
+
+### HSM Configuration
+```json
+{
+  "signer": {
+    "clientId": "your-fireblocks-client-id",
+    "versionId": "1"
+  }
+}
+```
+
+### MPC Configuration
+```json
+{
+  "signer": {
+    "clientId": "your-fireblocks-client-id",
+    "assetId": "ETH"
+  }
+}
+```
+
+## Need Help?
+
+- **Documentation**: Browse the detailed guides in our documentation
+- **Support**: Contact our team for technical assistance
+- **Community**: Join our developer community for discussions
+- **Status**: Check our status page for service availability
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <p className="text-blue-800">
+    <strong>💡 Pro Tip:</strong> Use the interactive documentation to understand the API before integrating it into your application. You can export your successful requests as code snippets for your preferred programming language.
+  </p>
+</div> 

@@ -1,0 +1,1960 @@
+basePath: /
+consumes:
+    - application/json
+definitions:
+    AccountInfo:
+        description: AccountInfo defines the structure for an API account Info
+        properties:
+            X:
+                items:
+                    type: string
+                type: array
+            "Y":
+                items:
+                    type: string
+                type: array
+            legacyWallet:
+                description: |-
+                    Threshold *big.Int `json:"threshold" validate:"required_if=WalletCustody 3,required_if=WalletCustody 4,omitempty"`
+                    The legacy wallet flag
+                    Note: Only required if Wallet was created before the MSA upgrade
+                example: true
+                type: boolean
+                x-go-name: LegacyWallet
+            passkeyPubKey:
+                description: |-
+                    The passkey public key in base64 format
+                    Note: Only required if Wallet custody is 2 or 4 or 5
+                items:
+                    type: string
+                type: array
+                x-go-name: PublicKey
+            salt:
+                description: |-
+                    The Salt to predict the wallet address
+                    Note: Only required if Wallet address is empty
+                example: example@gmail.com
+                type: string
+                x-go-name: Salt
+            signers:
+                description: |-
+                    The signers of the validator
+                    Note: Only required if Validator type is 3 or 4
+                example: "0x000000000000000000000000000000000000dEaD"
+                items:
+                    type: string
+                maxLength: 42
+                minLength: 42
+                type: array
+                x-go-name: Signers
+            threshold:
+                description: |-
+                    Signers []*common.Address `json:"signers" validate:"required_if=WalletCustody 3,required_if=WalletCustody 4,omitempty"`
+                    The threshold of the validator
+                    Note: Only required if Validator type is 3 or 4
+                example: "1"
+                type: string
+                x-go-name: Threshold
+            wallet:
+                description: |-
+                    The wallet address
+                    Note: Only required if salt is empty
+                example: "0x000000000000000000000000000000000000dEaD"
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Wallet
+            walletCustody:
+                description: The wallet custody classification
+                example: 2
+                format: int64
+                maximum: 5
+                minimum: 0
+                type: integer
+                x-go-name: WalletCustody
+        required:
+            - walletCustody
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    AddError:
+        properties:
+            RequestId:
+                type: string
+            errorABI:
+                additionalProperties: {}
+                description: The abi to add the errors on the allAbis file
+                example:
+                    inputs:
+                        - internalType: bytes32
+                          name: s
+                          type: bytes32
+                    name: ECDSAInvalidSignatureS
+                    type: error
+                type: object
+                x-go-name: ErrorABI
+        required:
+            - errorABI
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    AddErrorResponse:
+        description: Response defines the structure for the add error response
+        properties:
+            errorDef:
+                description: The errorDef
+                example: error ECDSAInvalidSignatureS(bytes32 indexed s)
+                type: string
+                x-go-name: ErrorDef
+            status:
+                description: The request status
+                example: 200
+                format: int64
+                type: integer
+                x-go-name: Status
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/addAbi
+    AddEvent:
+        properties:
+            RequestId:
+                type: string
+            eventABI:
+                additionalProperties: {}
+                description: The abi to add the events on the allAbis file
+                example:
+                    anonymous: false
+                    inputs:
+                        - indexed: true
+                          internalType: address
+                          name: from
+                          type: address
+                        - indexed: true
+                          internalType: address
+                          name: to
+                          type: address
+                        - indexed: false
+                          internalType: uint256
+                          name: value
+                          type: uint256
+                    name: Transfer
+                    type: event
+                type: object
+                x-go-name: EventABI
+        required:
+            - eventABI
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    AddEventResponse:
+        description: Response defines the structure for the add events response
+        properties:
+            eventDef:
+                description: The eventDef
+                example: event Transfer(address indexed from, address indexed to, uint256 value)
+                type: string
+                x-go-name: EventDef
+            status:
+                description: The request status
+                example: 200
+                format: int64
+                type: integer
+                x-go-name: Status
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/addAbi
+    Argument:
+        description: Types are used when packing and testing arguments.
+        properties:
+            Indexed:
+                type: boolean
+            Name:
+                type: string
+            Type:
+                $ref: '#/definitions/Type'
+        title: Argument holds the name of the argument and the corresponding type.
+        type: object
+        x-go-package: github.com/ethereum/go-ethereum/accounts/abi
+    Arguments:
+        items:
+            $ref: '#/definitions/Argument'
+        type: array
+        x-go-package: github.com/ethereum/go-ethereum/accounts/abi
+    CheckAccount:
+        description: Result defines the structure for an API check account payload
+        properties:
+            salt:
+                description: |-
+                    The Salt to predict the wallet address
+                    Note: Only required if Wallet address is empty
+                example: example@gmail.com
+                type: string
+                x-go-name: Salt
+            wallet:
+                description: |-
+                    The wallet address
+                    Note: Only required if salt is empty
+                example: "0x000000000000000000000000000000000000dEaD"
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Wallet
+            walletCustody:
+                description: |-
+                    The wallet custody classification
+                    Note: Only required if Wallet address is empty
+                example: 2
+                format: int64
+                maximum: 3
+                minimum: 0
+                type: integer
+                x-go-name: WalletCustody
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    CheckAccounts:
+        properties:
+            accounts:
+                description: The check account requests
+                items:
+                    $ref: '#/definitions/CheckAccount'
+                type: array
+                x-go-name: Accounts
+            settings:
+                $ref: '#/definitions/CheckSettings'
+        required:
+            - accounts
+            - settings
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    CheckSettings:
+        description: Result defines the structure for an API check account settings
+        properties:
+            beaconAdminAddress:
+                description: The beacon admin address of the provided chain
+                example: 0x183A1019242865C39f06C78716933259A161E99A\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: BeaconAdminAddress
+            beaconAdminCreationCode:
+                description: The beacon creation code of the provided chain
+                example: 0x60a060405260405162000955380380620009558339810160408190526200002691620003e1565b6200003d82826200005060201b620000201760201c565b506001600160a01b0316608052620004eb565b6200005b8262000125565b6040516001600160a01b038316907f1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e90600090a2805115620001175762000112826001600160a01b0316635c60da1b6040518163ffffffff1660e01b8152600401602060405180830381865afa158015620000da573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190620001009190620004af565b826200025660201b620000e01760201c565b505050565b62000121620002d3565b5050565b806001600160a01b03163b6000036200016157604051631933b43b60e21b81526001600160a01b03821660048201526024015b60405180910390fd5b806200019b7fa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d5060001b620002f560201b620001561760201c565b80546001600160a01b0319166001600160a01b0392831617905560408051635c60da1b60e01b81529051600092841691635c60da1b9160048083019260209291908290030181865afa158015620001f6573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906200021c9190620004af565b9050806001600160a01b03163b6000036200012157604051634c9c8ce360e01b81526001600160a01b038216600482015260240162000158565b6060600080846001600160a01b031684604051620002759190620004cd565b600060405180830381855af49150503d8060008114620002b2576040519150601f19603f3d011682016040523d82523d6000602084013e620002b7565b606091505b509092509050620002ca858383620002f8565b95945050505050565b3415620002f35760405163b398979f60e01b815260040160405180910390fd5b565b90565b60608262000311576200030b826200035e565b62000357565b81511580156200032957506001600160a01b0384163b155b156200035457604051639996b31560e01b81526001600160a01b038516600482015260240162000158565b50805b9392505050565b8051156200036f5780518082602001fd5b604051630a12f52160e11b815260040160405180910390fd5b80516001600160a01b0381168114620003a057600080fd5b919050565b634e487b7160e01b600052604160045260246000fd5b60005b83811015620003d8578181015183820152602001620003be565b50506000910152565b60008060408385031215620003f557600080fd5b620004008362000388565b60208401519092506001600160401b03808211156200041e57600080fd5b818501915085601f8301126200043357600080fd5b815181811115620004485762000448620003a5565b604051601f8201601f19908116603f01168101908382118183101715620004735762000473620003a5565b816040528281528860208487010111156200048d57600080fd5b620004a0836020830160208801620003bb565b80955050505050509250929050565b600060208284031215620004c257600080fd5b620003578262000388565b60008251620004e1818460208701620003bb565b9190910192915050565b60805161044e62000507600039600061015d015261044e6000f3fe608060405261000c61000e565b005b61001e610019610159565b6101e2565b565b61002982610206565b6040516001600160a01b038316907f1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e90600090a28051156100d4576100cf826001600160a01b0316635c60da1b6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156100a5573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906100c991906103c0565b826100e0565b505050565b6100dc610319565b5050565b6060600080846001600160a01b0316846040516100fd91906103e9565b600060405180830381855af49150503d8060008114610138576040519150601f19603f3d011682016040523d82523d6000602084013e61013d565b606091505b509150915061014d858383610338565b95945050505050565b90565b60007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316635c60da1b6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156101b9573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906101dd91906103c0565b905090565b3660008037600080366000845af43d6000803e808015610201573d6000f35b3d6000fd5b806001600160a01b03163b60000361024157604051631933b43b60e21b81526001600160a01b03821660048201526024015b60405180910390fd5b807fa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d5080546001600160a01b0319166001600160a01b0392831617905560408051635c60da1b60e01b81529051600092841691635c60da1b9160048083019260209291908290030181865afa1580156102bd573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906102e191906103c0565b9050806001600160a01b03163b6000036100dc57604051634c9c8ce360e01b81526001600160a01b0382166004820152602401610238565b341561001e5760405163b398979f60e01b815260040160405180910390fd5b60608261034d5761034882610397565b610390565b815115801561036457506001600160a01b0384163b155b1561038d57604051639996b31560e01b81526001600160a01b0385166004820152602401610238565b50805b9392505050565b8051156103a75780518082602001fd5b604051630a12f52160e11b815260040160405180910390fd5b6000602082840312156103d257600080fd5b81516001600160a01b038116811461039057600080fd5b6000825160005b8181101561040a57602081860181015185830152016103f0565b50600092019182525091905056fea2646970667358221220c5744800592430483b524bcc1263abe8201a2765cd6b5ebc4ae058970051a46864736f6c63430008120033\
+                type: string
+                x-go-name: BeaconAdminCreationCode
+            factory:
+                description: The factory address of the provided chain
+                example: 0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Factory
+            rpc:
+                description: The RPC for the chain desired
+                example: https://polygon-amoy.infura.io/v3/{key}
+                type: string
+                x-go-name: RPC
+        required:
+            - rpc
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    CreateAccount:
+        properties:
+            X:
+                items:
+                    type: string
+                type: array
+            "Y":
+                items:
+                    type: string
+                type: array
+            legacyWallet:
+                description: |-
+                    Threshold *big.Int `json:"threshold" validate:"required_if=WalletCustody 3,required_if=WalletCustody 4,omitempty"`
+                    The legacy wallet flag
+                    Note: Only required if Wallet was created before the MSA upgrade
+                example: true
+                type: boolean
+                x-go-name: LegacyWallet
+            passkeyPubKey:
+                description: |-
+                    The passkey public key in base64 format
+                    Note: Only required if Wallet custody is 2 or 4 or 5
+                items:
+                    type: string
+                type: array
+                x-go-name: PublicKey
+            salt:
+                description: |-
+                    The Salt to predict the wallet address
+                    Note: Only required if Wallet address is empty
+                example: example@gmail.com
+                type: string
+                x-go-name: Salt
+            signers:
+                description: |-
+                    The signers of the validator
+                    Note: Only required if Validator type is 3 or 4
+                example: "0x000000000000000000000000000000000000dEaD"
+                items:
+                    type: string
+                maxLength: 42
+                minLength: 42
+                type: array
+                x-go-name: Signers
+            threshold:
+                description: |-
+                    Signers []*common.Address `json:"signers" validate:"required_if=WalletCustody 3,required_if=WalletCustody 4,omitempty"`
+                    The threshold of the validator
+                    Note: Only required if Validator type is 3 or 4
+                example: "1"
+                type: string
+                x-go-name: Threshold
+            wallet:
+                description: |-
+                    The wallet address
+                    Note: Only required if salt is empty
+                example: "0x000000000000000000000000000000000000dEaD"
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Wallet
+            walletCustody:
+                description: The wallet custody classification
+                example: 2
+                format: int64
+                maximum: 5
+                minimum: 0
+                type: integer
+                x-go-name: WalletCustody
+        required:
+            - walletCustody
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    CreateAccounts:
+        properties:
+            accounts:
+                description: The Accounts array of information to be created
+                items:
+                    $ref: '#/definitions/CreateAccount'
+                type: array
+                x-go-name: Accounts
+            settings:
+                $ref: '#/definitions/Settings'
+        required:
+            - accounts
+            - settings
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    EIP712:
+        properties:
+            address:
+                type: string
+                x-go-name: Address
+            chainId:
+                type: string
+                x-go-name: ChainId
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    EncodedOperation:
+        description: Defines the encoded operations to be used
+        properties:
+            encodedUserOp:
+                description: The Encoded operation got from the estimate gas
+                example: 0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000cb720637750062886dc327770344dffca983e57c00000000000000004dd96099d43017f5d66e387f49b274a3000000000000000000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000180000000000000000000000000000000000000000000000000000000000002a8e200000000000000000000000000000000000000000000000000000000000128ef000000000000000000000000000000000000000000000000000000000000ffe9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000420000000000000000000000000000000000000000000000000000000000000044000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000264e721e48d000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000a60834a4193d84db090a235dec57725edc7d514d000000000000000000000000a60834a4193d84db090a235dec57725edc7d514d0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000024a0712d680000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024a0712d68000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004e00000000000000000000000000e4cc2a27c44597cbc469472a376c908b286c52969d0ce2fdb1e8ca78e422d4452cb55998f2adcfb4e56a2777c0d870ddb8a3b6f1a50046523b6d0ad91f62c5b61c000000000000000000000000000000000000/
+                type: string
+                x-go-name: Encoded
+            signature:
+                description: The signature for the encoded user operation
+                type: string
+                x-go-name: Signature
+            userOpHash:
+                description: The user op hash got from the estimate gas
+                example: c85a8882479c8ab5a37f5df12ca60ee3a3116bac821cfdfa6e3b1486368f06ea/
+                type: string
+                x-go-name: UserOpHash
+            validAfter:
+                description: The amount of time that the transaction validation starts being available
+                example: 1718733600
+                format: uint64
+                type: integer
+                x-go-name: ValidAfter
+            validUnitl:
+                description: The amount of time that the transaction is valid for
+                example: 1718733700
+                format: uint64
+                type: integer
+                x-go-name: ValidUntil
+            walletCustody:
+                description: The wallet custody classification
+                example: 2
+                format: int64
+                maximum: 3
+                minimum: 1
+                type: integer
+                x-go-name: WalletCustody
+        required:
+            - encodedUserOp
+            - userOpHash
+            - walletCustody
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    EncodedOperations:
+        properties:
+            operations:
+                items:
+                    $ref: '#/definitions/EncodedOperation'
+                type: array
+                x-go-name: Operations
+            settings:
+                $ref: '#/definitions/EncodedSettings'
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    EncodedSettings:
+        description: Defines the Settings to be used
+        properties:
+            entryPoint:
+                description: The entry point address on the provided chain
+                example: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: EntryPoint
+            percentTxGasOvershoot:
+                description: |-
+                    The amount of gas overshoot (in percent) for the transaction.
+                    Note: default value is 50
+                example: 33
+                format: uint64
+                type: integer
+                x-go-name: PercentTxGasOvershoot
+            percentTxGasPriceOvershoot:
+                description: The amount of gas price overshoot (in percent) for the transaction.
+                example: "33"
+                type: string
+                x-go-name: PercentTxGasPriceOvershoot
+            rpc:
+                description: The RPC to be used on the request
+                example: https://wiser-yolo-star.ethereum-sepolia.quiknode.pro/{key}/
+                type: string
+                x-go-name: RPC
+            signer:
+                $ref: '#/definitions/SignerSettings'
+            useABI:
+                description: The abi to decode the response if applicable
+                example:
+                    - anonymous: false
+                      inputs:
+                        - indexed: true
+                          internalType: address
+                          name: from
+                          type: address
+                        - indexed: true
+                          internalType: address
+                          name: to
+                          type: address
+                        - indexed: false
+                          internalType: uint256
+                          name: value
+                          type: uint256
+                      name: Transfer
+                      type: event
+                items:
+                    additionalProperties: {}
+                    type: object
+                type: array
+                x-go-name: UseABI
+        required:
+            - rpc
+            - entryPoint
+            - signer
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    EstimateGasResponse:
+        description: Response defines the structure for the transaction response
+        properties:
+            error:
+                description: The Errors of the transaction if applicable
+                example: '{"1": {"error": "account already exists","salt": "blabla130001"},"2": {"error": "account already exists","salt": "blabla140001@example.com"}}'
+                type: string
+                x-go-name: Error
+            gas:
+                description: The Return Data of the transaction if applicable
+                example: 21000
+                format: uint64
+                type: integer
+                x-go-name: Gas
+            status:
+                description: The status code of the transaction (0 - failed, 1 - success)
+                example: 1
+                format: uint8
+                maximum: 5
+                minimum: 0
+                type: integer
+                x-go-name: Status
+            userOps:
+                description: The encoded hex string from an UserOperation object
+                items:
+                    additionalProperties: {}
+                    type: object
+                type: array
+                x-go-name: UserOps
+        required:
+            - status
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    Event:
+        description: |-
+            Event is an event potentially triggered by the EVM's LOG mechanism. The Event
+            holds type information (inputs) about the yielded output. Anonymous events
+            don't get the signature canonical representation as the first LOG topic.
+        properties:
+            Anonymous:
+                type: boolean
+            ID:
+                description: |-
+                    ID returns the canonical representation of the event's signature used by the
+                    abi definition to identify event names and types.
+                type: string
+            Inputs:
+                $ref: '#/definitions/Arguments'
+            Name:
+                description: |-
+                    Name is the event name used for internal representation. It's derived from
+                    the raw name and a suffix will be added in the case of event overloading.
+
+                    e.g.
+                    These are two events that have the same name:
+                    foo(int,int)
+                    foo(uint,uint)
+                    The event name of the first one will be resolved as foo while the second one
+                    will be resolved as foo0.
+                type: string
+            RawName:
+                description: RawName is the raw event name parsed from ABI.
+                type: string
+            Sig:
+                description: |-
+                    Sig contains the string signature according to the ABI spec.
+                    e.g.	 event foo(uint32 a, int b) = "foo(uint32,int256)"
+                    Please note that "int" is substitute for its canonical representation "int256"
+                type: string
+        type: object
+        x-go-package: github.com/ethereum/go-ethereum/accounts/abi
+    FilterEvent:
+        properties:
+            ABIEvent:
+                $ref: '#/definitions/Event'
+            RequestId:
+                type: string
+            blockHash:
+                description: The exact block to filter the events
+                example: 0x
+                type: string
+                x-go-name: BlockHash
+            contracts:
+                description: The Contracts addresses to filter the events
+                example: 0x96AF30413A6999f9948c7c88b0dFf8B56Bf31EF6\
+                items:
+                    type: string
+                type: array
+                x-go-name: Contracts
+            eventABI:
+                additionalProperties: {}
+                description: |-
+                    The events to filter on the contracts
+                    Note : use 'eventDef', or 'eventName', or 'eventABI', address indexed to, uint256 value)"
+                example: '{"type": "event","name": "Transfer","inputs": [{"name": "from","type": "address","indexed": true,"internalType": "address"},{"name": "to","type": "address","indexed": true,"internalType": "address"},{"name": "tokenId","type": "uint256","indexed": true,"internalType": "uint256"}],"anonymous": false},'
+                type: object
+                x-go-name: EventABI
+            eventDef:
+                description: |-
+                    The events to filter on the contracts
+                    Note : use 'eventDef', or 'eventName', or 'eventABI', address indexed to, uint256 value)"
+                example: event Transfer(address indexed from, address indexed to, uint256 value)
+                type: string
+                x-go-name: EventDef
+            eventName:
+                description: |-
+                    The events to filter on the contracts
+                    Note : use 'eventDef', or 'eventName', or 'eventABI', address indexed to, uint256 value)"
+                example: Transfer0
+                type: string
+                x-go-name: EventName
+            fields:
+                additionalProperties: {}
+                description: The Field addresses to filter the events
+                example: '{"from": "0X0000000000000000000000000000000000000000","to": ["0x106eB473f541E9485bB428aeC502c2FEa1467779","0x667D7039298aFEf8a8393f95CBC2018230028920"]// "tokenId": 10101}'
+                type: object
+                x-go-name: Fields
+            fromBlock:
+                description: The block from to filter the events
+                example: 0x
+                type: string
+                x-go-name: FromBlock
+            rpc:
+                description: The rpc to use to filter the events
+                example: '"https://polygon-mainnet.g.alchemy.com/v2/uxF9Gj-n0hyXSNeg3v0V_uPk99hNOUzR"'
+                type: string
+                x-go-name: RPC
+            toBlock:
+                description: The block to filter the events
+                example: 0x
+                type: string
+                x-go-name: ToBlock
+        required:
+            - contracts
+            - eventName
+            - eventDef
+            - eventABI
+            - fields
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    FilterEventResponse:
+        description: Response defines the structure for the filter events response
+        properties:
+            requestStatus:
+                description: The request status
+                example: 200
+                format: int64
+                type: integer
+                x-go-name: RequestStatus
+            txHashes:
+                description: The tx hashes containing the filtered events
+                example: 0x81eb1ce8c61a966a1a9ca84bf3701f934977d36e76f5b255c43478a3d59936e0i
+                items:
+                    type: string
+                type: array
+                x-go-name: TxHashes
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/events
+    FoundEvents:
+        description: Defines the found events dto
+        properties:
+            definition:
+                description: The definition of the event
+                example: none
+                type: string
+                x-go-name: Definition
+            name:
+                description: The Name of the event
+                example: none
+                type: string
+                x-go-name: Name
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/events
+    FoundEventsResponse:
+        properties:
+            events:
+                items:
+                    $ref: '#/definitions/FoundEvents'
+                type: array
+                x-go-name: Events
+            found:
+                format: int64
+                type: integer
+                x-go-name: Found
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/events
+    GenericError:
+        description: GenericError is a generic error message returned by a server
+        properties:
+            error:
+                description: the error message
+                example: invalid rpc
+                type: string
+                x-go-name: Message
+        required:
+            - error
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/handlers
+    Operation:
+        description: Defines the account operations to be executed
+        properties:
+            X:
+                items:
+                    type: string
+                type: array
+            "Y":
+                items:
+                    type: string
+                type: array
+            dependsOn:
+                description: The index of a transaction that has to succeed before execution this index
+                example: 2
+                format: int64
+                type: integer
+                x-go-name: DependsOn
+            funcParams:
+                description: The params for the function signature if applicable
+                example: '["0xB72F28d9c0f72d488813E57581C17C466855E1F7\", 10]'
+                items: {}
+                type: array
+                x-go-name: Params
+            funcSignature:
+                description: The function signature for the execution
+                example: transfer(address,uint256)
+                type: string
+                x-go-name: FuncSignature
+            legacyWallet:
+                description: |-
+                    Threshold *big.Int `json:"threshold" validate:"required_if=WalletCustody 3,required_if=WalletCustody 4,omitempty"`
+                    The legacy wallet flag
+                    Note: Only required if Wallet was created before the MSA upgrade
+                example: true
+                type: boolean
+                x-go-name: LegacyWallet
+            nonceKey:
+                description: The key for the 2 dimensional nonce of the account
+                example: '{kubernetes identifier}'
+                type: string
+                x-go-name: NonceKey
+            passkeyPubKey:
+                description: |-
+                    The passkey public key in base64 format
+                    Note: Only required if Wallet custody is 2 or 4 or 5
+                items:
+                    type: string
+                type: array
+                x-go-name: PublicKey
+            salt:
+                description: |-
+                    The Salt to predict the wallet address
+                    Note: Only required if Wallet address is empty
+                example: example@gmail.com
+                type: string
+                x-go-name: Salt
+            signers:
+                description: |-
+                    The signers of the validator
+                    Note: Only required if Validator type is 3 or 4
+                example: "0x000000000000000000000000000000000000dEaD"
+                items:
+                    type: string
+                maxLength: 42
+                minLength: 42
+                type: array
+                x-go-name: Signers
+            threshold:
+                description: |-
+                    Signers []*common.Address `json:"signers" validate:"required_if=WalletCustody 3,required_if=WalletCustody 4,omitempty"`
+                    The threshold of the validator
+                    Note: Only required if Validator type is 3 or 4
+                example: "1"
+                type: string
+                x-go-name: Threshold
+            to:
+                description: The contract address for the execute operation
+                example: "0x000000000000000000000000000000000000dEaD"
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: To
+            validAfter:
+                description: The amount of time that the transaction validation starts being available
+                example: 1718733600
+                format: uint64
+                type: integer
+                x-go-name: ValidAfter
+            validUnitl:
+                description: The amount of time that the transaction is valid for
+                example: 1718733700
+                format: uint64
+                type: integer
+                x-go-name: ValidUntil
+            value:
+                description: The value to be sent with the transaction
+                example: 1 ether
+                type: string
+                x-go-name: Value
+            wallet:
+                description: |-
+                    The wallet address
+                    Note: Only required if salt is empty
+                example: "0x000000000000000000000000000000000000dEaD"
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Wallet
+            walletCustody:
+                description: The wallet custody classification
+                example: 2
+                format: int64
+                maximum: 5
+                minimum: 0
+                type: integer
+                x-go-name: WalletCustody
+        required:
+            - walletCustody
+            - to
+            - funcSignature
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    Operations:
+        properties:
+            operations:
+                description: The Operations array to be executed
+                items:
+                    $ref: '#/definitions/Operation'
+                type: array
+                x-go-name: Operations
+            settings:
+                $ref: '#/definitions/Settings'
+        required:
+            - operations
+            - settings
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    PasskeyHashResponse:
+        properties:
+            results:
+                description: The passkey info to be used further on the encoded operation and signed by the passkey
+                items:
+                    $ref: '#/definitions/PasskeyResult'
+                type: array
+                x-go-name: Results
+            status:
+                description: The status of the request index
+                example: 0
+                format: int64
+                type: integer
+                x-go-name: Status
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/passkeyHash
+    PasskeyOperation:
+        description: Defines the passkeys operation dto
+        properties:
+            encodedUserOp:
+                description: The Encoded operation got from the estimate gas
+                example: 0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000cb720637750062886dc327770344dffca983e57c00000000000000004dd96099d43017f5d66e387f49b274a3000000000000000000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000180000000000000000000000000000000000000000000000000000000000002a8e200000000000000000000000000000000000000000000000000000000000128ef000000000000000000000000000000000000000000000000000000000000ffe9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000420000000000000000000000000000000000000000000000000000000000000044000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000264e721e48d000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000a60834a4193d84db090a235dec57725edc7d514d000000000000000000000000a60834a4193d84db090a235dec57725edc7d514d0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000024a0712d680000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024a0712d68000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004e00000000000000000000000000e4cc2a27c44597cbc469472a376c908b286c52969d0ce2fdb1e8ca78e422d4452cb55998f2adcfb4e56a2777c0d870ddb8a3b6f1a50046523b6d0ad91f62c5b61c000000000000000000000000000000000000/
+                type: string
+                x-go-name: Encoded
+            userOpHash:
+                description: The user op hash got from the estimate gas
+                example: c85a8882479c8ab5a37f5df12ca60ee3a3116bac821cfdfa6e3b1486368f06ea/
+                type: string
+                x-go-name: UserOpHash
+            validationData:
+                $ref: '#/definitions/PasskeySignature'
+        required:
+            - encodedUserOp
+            - userOpHash
+            - validationData
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    PasskeyOperations:
+        properties:
+            operations:
+                items:
+                    $ref: '#/definitions/PasskeyOperation'
+                type: array
+                x-go-name: Operations
+            settings:
+                $ref: '#/definitions/EncodedSettings'
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    PasskeyResult:
+        description: Defines the passkey results
+        properties:
+            aggrIndexes:
+                items:
+                    format: int64
+                    type: integer
+                type: array
+                x-go-name: AggrIndexes
+            encodedUserOp:
+                type: string
+                x-go-name: Encoded
+            error:
+                type: string
+                x-go-name: Error
+            userOpHash:
+                type: string
+                x-go-name: UserOpHash
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/passkeyHash
+    PasskeySignature:
+        description: Defines the passkeys signature dto
+        properties:
+            R:
+                type: string
+            S:
+                type: string
+            authenticatorData:
+                description: The data needed to authenticate the passkey signature, in base64 format
+                example: none
+                type: string
+                x-go-name: AuthenticatorData
+            clientDataJSON:
+                description: The client data json needed for the passkey signature, in base64 format
+                example: none
+                type: string
+                x-go-name: ClientDataJSON
+            signature:
+                description: The passkey signature in base64 format
+                example: none
+                type: string
+                x-go-name: Signature
+            validAfter:
+                description: The amount of time that the transaction validation starts being available
+                example: 1718733600
+                format: uint64
+                type: integer
+                x-go-name: ValidAfter
+            validUnitl:
+                description: The amount of time that the transaction is valid for
+                example: 1718733700
+                format: uint64
+                type: integer
+                x-go-name: ValidUntil
+        required:
+            - signature
+            - authenticatorData
+            - clientDataJSON
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    PredictAccount:
+        description: Result defines the structure for an API predict payload
+        properties:
+            salt:
+                description: The Salt to predict the wallet address
+                example: example@gmail.com
+                type: string
+                x-go-name: Salt
+            walletCustody:
+                description: The wallet custody classification
+                example: 2
+                format: int64
+                maximum: 3
+                minimum: 0
+                type: integer
+                x-go-name: WalletCustody
+        required:
+            - salt
+            - walletCustody
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    PredictAccounts:
+        properties:
+            accounts:
+                description: The Predict wallet requests
+                items:
+                    $ref: '#/definitions/PredictAccount'
+                type: array
+                x-go-name: Accounts
+            settings:
+                $ref: '#/definitions/PredictSettings'
+        required:
+            - accounts
+            - settings
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    PredictSettings:
+        description: Result defines the structure for an API predict payload
+        properties:
+            beaconAdminAddress:
+                description: The beacon admin address of the provided chain
+                example: 0x183A1019242865C39f06C78716933259A161E99A\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: BeaconAdminAddress
+            beaconAdminCreationCode:
+                description: The beacon creation code of the provided chain
+                example: 0x60a060405260405162000955380380620009558339810160408190526200002691620003e1565b6200003d82826200005060201b620000201760201c565b506001600160a01b0316608052620004eb565b6200005b8262000125565b6040516001600160a01b038316907f1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e90600090a2805115620001175762000112826001600160a01b0316635c60da1b6040518163ffffffff1660e01b8152600401602060405180830381865afa158015620000da573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190620001009190620004af565b826200025660201b620000e01760201c565b505050565b62000121620002d3565b5050565b806001600160a01b03163b6000036200016157604051631933b43b60e21b81526001600160a01b03821660048201526024015b60405180910390fd5b806200019b7fa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d5060001b620002f560201b620001561760201c565b80546001600160a01b0319166001600160a01b0392831617905560408051635c60da1b60e01b81529051600092841691635c60da1b9160048083019260209291908290030181865afa158015620001f6573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906200021c9190620004af565b9050806001600160a01b03163b6000036200012157604051634c9c8ce360e01b81526001600160a01b038216600482015260240162000158565b6060600080846001600160a01b031684604051620002759190620004cd565b600060405180830381855af49150503d8060008114620002b2576040519150601f19603f3d011682016040523d82523d6000602084013e620002b7565b606091505b509092509050620002ca858383620002f8565b95945050505050565b3415620002f35760405163b398979f60e01b815260040160405180910390fd5b565b90565b60608262000311576200030b826200035e565b62000357565b81511580156200032957506001600160a01b0384163b155b156200035457604051639996b31560e01b81526001600160a01b038516600482015260240162000158565b50805b9392505050565b8051156200036f5780518082602001fd5b604051630a12f52160e11b815260040160405180910390fd5b80516001600160a01b0381168114620003a057600080fd5b919050565b634e487b7160e01b600052604160045260246000fd5b60005b83811015620003d8578181015183820152602001620003be565b50506000910152565b60008060408385031215620003f557600080fd5b620004008362000388565b60208401519092506001600160401b03808211156200041e57600080fd5b818501915085601f8301126200043357600080fd5b815181811115620004485762000448620003a5565b604051601f8201601f19908116603f01168101908382118183101715620004735762000473620003a5565b816040528281528860208487010111156200048d57600080fd5b620004a0836020830160208801620003bb565b80955050505050509250929050565b600060208284031215620004c257600080fd5b620003578262000388565b60008251620004e1818460208701620003bb565b9190910192915050565b60805161044e62000507600039600061015d015261044e6000f3fe608060405261000c61000e565b005b61001e610019610159565b6101e2565b565b61002982610206565b6040516001600160a01b038316907f1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e90600090a28051156100d4576100cf826001600160a01b0316635c60da1b6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156100a5573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906100c991906103c0565b826100e0565b505050565b6100dc610319565b5050565b6060600080846001600160a01b0316846040516100fd91906103e9565b600060405180830381855af49150503d8060008114610138576040519150601f19603f3d011682016040523d82523d6000602084013e61013d565b606091505b509150915061014d858383610338565b95945050505050565b90565b60007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316635c60da1b6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156101b9573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906101dd91906103c0565b905090565b3660008037600080366000845af43d6000803e808015610201573d6000f35b3d6000fd5b806001600160a01b03163b60000361024157604051631933b43b60e21b81526001600160a01b03821660048201526024015b60405180910390fd5b807fa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d5080546001600160a01b0319166001600160a01b0392831617905560408051635c60da1b60e01b81529051600092841691635c60da1b9160048083019260209291908290030181865afa1580156102bd573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906102e191906103c0565b9050806001600160a01b03163b6000036100dc57604051634c9c8ce360e01b81526001600160a01b0382166004820152602401610238565b341561001e5760405163b398979f60e01b815260040160405180910390fd5b60608261034d5761034882610397565b610390565b815115801561036457506001600160a01b0384163b155b1561038d57604051639996b31560e01b81526001600160a01b0385166004820152602401610238565b50805b9392505050565b8051156103a75780518082602001fd5b604051630a12f52160e11b815260040160405180910390fd5b6000602082840312156103d257600080fd5b81516001600160a01b038116811461039057600080fd5b6000825160005b8181101561040a57602081860181015185830152016103f0565b50600092019182525091905056fea2646970667358221220c5744800592430483b524bcc1263abe8201a2765cd6b5ebc4ae058970051a46864736f6c63430008120033\
+                type: string
+                x-go-name: BeaconAdminCreationCode
+            factory:
+                description: The factory address of the provided chain
+                example: 0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Factory
+        required:
+            - factory
+            - beaconAdminAddress
+            - beaconAdminCreationCode
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    ReadContract:
+        description: Result defines the structure for an API read contract payload
+        properties:
+            from:
+                description: The "sender" address for the read contract
+                example: "0x000000000000000000000000000000000000dEaD"
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: From
+            funcParams:
+                description: The params for the function signature if applicable
+                example: '["0xB72F28d9c0f72d488813E57581C17C466855E1F7\", 10]'
+                items: {}
+                type: array
+                x-go-name: Params
+            funcSignature:
+                description: The function signature for the read contract
+                example: transfer(address,uint256)
+                type: string
+                x-go-name: FuncSignature
+            returnSignature:
+                description: The return for the function read
+                example: bool
+                type: string
+                x-go-name: ReturnSignature
+            to:
+                description: The contract address for the read contract
+                example: "0x000000000000000000000000000000000000dEaD"
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: To
+        required:
+            - to
+            - funcSignature
+            - returnSignature
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    ReadContracts:
+        properties:
+            reads:
+                description: The read contract requests
+                items:
+                    $ref: '#/definitions/ReadContract'
+                type: array
+                x-go-name: Reads
+            rpc:
+                description: The RPC for the chain desired
+                example: https://polygon-amoy.infura.io/v3/{key}
+                type: string
+                x-go-name: RPC
+        required:
+            - reads
+            - rpc
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    Receipt:
+        properties:
+            rpc:
+                description: The RPC to be used on the request
+                example: https://wiser-yolo-star.ethereum-sepolia.quiknode.pro/{key}/
+                type: string
+                x-go-name: RPC
+            txHashes:
+                description: The transaction hash of the receipt
+                example: 0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938/
+                items:
+                    type: string
+                type: array
+                x-go-name: TxHashes
+        required:
+            - txHashes
+            - rpc
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    ReceiptResponse:
+        properties:
+            receipts:
+                items:
+                    $ref: '#/definitions/Response'
+                type: array
+                x-go-name: Receipts
+            requestStatus:
+                format: int64
+                type: integer
+                x-go-name: RequestStatus
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/receipt
+    Response:
+        description: Response defines the structure for the transaction response
+        properties:
+            cumulativeGasUsed:
+                description: The Cumulative gas used by the transaction
+                example: 17033026
+                format: uint64
+                type: integer
+                x-go-name: CumulativeGasUsed
+            effectiveGasPrice:
+                description: The Effective Gas Price of the transaction
+                example: "1136849215"
+                type: string
+                x-go-name: EffectiveGasPrice
+            errors:
+                description: The Errors of the transaction if applicable
+                example: '{"1": {"error": "account already exists","salt": "blabla130001"},"2": {"error": "account already exists","salt": "blabla140001@example.com"}}'
+                items:
+                    additionalProperties: {}
+                    type: object
+                type: array
+                x-go-name: Errors
+            gasUsed:
+                description: The Gas Used by the transaction
+                example: 34111
+                format: uint64
+                type: integer
+                x-go-name: GasUsed
+            logs:
+                description: The logs of the transaction
+                example:
+                    - BeaconUpgraded:
+                        beacon: 0x189bca30f33febe6f9e3722909455b7666bc7deai
+                    - OwnershipTransferred:
+                        newOwner: 0xa61de0370cd362fe335f5b9957d2a4ede0b8e98ai
+                        previousOwner: "0x0000000000000000000000000000000000000000"
+                    - Initialized:
+                        version: 1
+                    - OwnershipTransferred:
+                        newOwner: 0xdb074b3c323a7ad418ebbe66bad231f43f680563i
+                        previousOwner: 0xa61de0370cd362fe335f5b9957d2a4ede0b8e98ai
+                    - AccountDeployed:
+                        factory: 0xa61de0370cd362fe335f5b9957d2a4ede0b8e98ai
+                        paymaster: "0x0000000000000000000000000000000000000000"
+                        sender: 0x28097ef2268b553783d9c32a33ecb1bb78b209f3i
+                        userOpHash: 0x9086e89f2b76258877b46ca052efcfaeb4322a2d0829765b0e01ed1f078e3ef8i
+                    - BeforeExecution: {}
+                    - UserOperationEvent:
+                        actualGasCost: 0
+                        actualGasUsed: 549731
+                        nonce: 6.875986470146984e+76
+                        paymaster: "0x0000000000000000000000000000000000000000"
+                        sender: 0x28097ef2268b553783d9c32a33ecb1bb78b209f3i
+                        success: true
+                        userOpHash: 0x9086e89f2b76258877b46ca052efcfaeb4322a2d0829765b0e01ed1f078e3ef8i
+                    - LogFeeTransfer:
+                        amount: 5122431000000000
+                        from: 0xdb074b3c323a7ad418ebbe66bad231f43f680563i
+                        input1: 1.792512714333093e+20
+                        input2: 2.672174795988594e+21
+                        output1: 1.792461490023093e+20
+                        output2: 2.672179918419594e+21
+                        to: 0x4631753190f2f5a15a7ba172bbac102b7d95fa22i
+                        token: 0x0000000000000000000000000000000000001010i
+                items:
+                    additionalProperties: {}
+                    type: object
+                type: array
+                x-go-name: Logs
+            returnData:
+                description: The Return Data of the transaction if applicable
+                example: '{"0": {"salt": "blabla150011","wallet": 0x28097eF2268B553783D9c32A33ECb1bB78B209F3i"}}'
+                items:
+                    additionalProperties: {}
+                    type: object
+                type: array
+                x-go-name: ReturnData
+            status:
+                description: The status code of the transaction (0 - failed, 1 - success, 2 - account already created, 3 - accounts partially created, 4 - opeartions partially executed)
+                example: 3
+                format: uint8
+                maximum: 4
+                minimum: 0
+                type: integer
+                x-go-name: Status
+            txHash:
+                description: The transaction hash
+                example: 0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938\
+                type: string
+                x-go-name: TxHash
+        required:
+            - status
+            - txHash
+            - cumulativeGasUsed
+            - gasUsed
+            - effectiveGasPrice
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    ResultCheck:
+        description: Result defines the structure for an API check account
+        properties:
+            error:
+                description: The Error of the check if applicable
+                type: string
+                x-go-name: Error
+            exists:
+                description: If the account exists
+                example: false
+                type: boolean
+                x-go-name: Exists
+            salt:
+                description: The Salt of the account
+                example: kblabla
+                type: string
+                x-go-name: Salt
+            wallet:
+                description: The wallet address of the account check
+                example: 0xe4cc2814721ee1441e2b54f4af19ba63a428711f/
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Wallet
+        required:
+            - exists
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/check
+    ResultPredict:
+        description: Result defines the structure for an API predict response
+        properties:
+            error:
+                description: The error of the prediction if applicable
+                example: internal application error
+                type: string
+                x-go-name: Error
+            salt:
+                description: The Salt for the wallet prediction
+                example: example@gmail.com
+                type: string
+                x-go-name: Salt
+            wallet:
+                description: The wallet address predicted
+                example: "0x000000000000000000000000000000000000dEaD"
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Wallet
+        required:
+            - salt
+            - wallet
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/predict
+    ResultRead:
+        description: Result defines the structure for an API read a contract
+        properties:
+            errors:
+                description: the error of the read contract if applicable
+                example: no transfer(address,uint256) method
+                type: string
+                x-go-name: Error
+            readIndex:
+                description: the read call index on the list provided
+                example: 1
+                format: int64
+                type: integer
+                x-go-name: ReadIndex
+            results:
+                description: the result of the read operation
+                example:
+                    - true
+                items: {}
+                type: array
+                x-go-name: Result
+        required:
+            - readIndex
+            - results
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/readContract
+    ResultSign:
+        description: Result defines the structure for an API sign message response
+        properties:
+            address:
+                description: the public address of the signer
+                example: 0xdb074b3c323a7ad418ebbe66bad231f43f680563i
+                type: string
+                x-go-name: Address
+            errors:
+                description: the error of the prediction if applicable
+                example: invalid client-id
+                items:
+                    type: string
+                type: array
+                x-go-name: Errors
+            publicKey:
+                description: the public key of the signer
+                example: 049113caedb5d570dc9a47974f819b9d2c88ffcf622c1f3c756be7955d9f16eae28d8f00ec4fa359c311ae4c25b58d2b1d872d6e4c37600494416d856615fb7e4b
+                type: string
+                x-go-name: PublicKey
+            signatures:
+                description: the bytes of the signed messages
+                example: '[{r: 52029130598967656743488232793250341962085495724998752603716116484733876898166,s: 24184651197945695194884875215320778292815292687107152906746143156080006114912,v: 27},{r: 58941945264209936992902352370058079067533050394968545480465164219148372148094,s: 5617335228284542612167567316372036388209641227749077429734269072701241780380,v: 28}]'
+                items: {}
+                type: array
+                x-go-name: Signatures
+        required:
+            - publicKey
+            - address
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/domain/signMessage
+    Settings:
+        description: Defines the Settings to be used
+        properties:
+            aggregator:
+                description: The aggregator address on the provided chain
+                example: 0x8D120E0A8a6aB93442B9839a7D6854De874A93fe\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Aggregator
+            beaconAdminAddress:
+                description: The beacon admin address on the provided chain
+                example: 0x189BCA30F33FEbe6f9E3722909455B7666bC7DEA\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: BeaconAdminAddress
+            beaconAdminCreationCode:
+                description: The Beacon admin creation code, only required for account creations
+                example: 0x60a060405260405162000955380380620009558339810160408190526200002691620003e1565b6200003d82826200005060201b620000201760201c565b506001600160a01b0316608052620004eb565b6200005b8262000125565b6040516001600160a01b038316907f1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e90600090a2805115620001175762000112826001600160a01b0316635c60da1b6040518163ffffffff1660e01b8152600401602060405180830381865afa158015620000da573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190620001009190620004af565b826200025660201b620000e01760201c565b505050565b62000121620002d3565b5050565b806001600160a01b03163b6000036200016157604051631933b43b60e21b81526001600160a01b03821660048201526024015b60405180910390fd5b806200019b7fa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d5060001b620002f560201b620001561760201c565b80546001600160a01b0319166001600160a01b0392831617905560408051635c60da1b60e01b81529051600092841691635c60da1b9160048083019260209291908290030181865afa158015620001f6573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906200021c9190620004af565b9050806001600160a01b03163b6000036200012157604051634c9c8ce360e01b81526001600160a01b038216600482015260240162000158565b6060600080846001600160a01b031684604051620002759190620004cd565b600060405180830381855af49150503d8060008114620002b2576040519150601f19603f3d011682016040523d82523d6000602084013e620002b7565b606091505b509092509050620002ca858383620002f8565b95945050505050565b3415620002f35760405163b398979f60e01b815260040160405180910390fd5b565b90565b60608262000311576200030b826200035e565b62000357565b81511580156200032957506001600160a01b0384163b155b156200035457604051639996b31560e01b81526001600160a01b038516600482015260240162000158565b50805b9392505050565b8051156200036f5780518082602001fd5b604051630a12f52160e11b815260040160405180910390fd5b80516001600160a01b0381168114620003a057600080fd5b919050565b634e487b7160e01b600052604160045260246000fd5b60005b83811015620003d8578181015183820152602001620003be565b50506000910152565b60008060408385031215620003f557600080fd5b620004008362000388565b60208401519092506001600160401b03808211156200041e57600080fd5b818501915085601f8301126200043357600080fd5b815181811115620004485762000448620003a5565b604051601f8201601f19908116603f01168101908382118183101715620004735762000473620003a5565b816040528281528860208487010111156200048d57600080fd5b620004a0836020830160208801620003bb565b80955050505050509250929050565b600060208284031215620004c257600080fd5b620003578262000388565b60008251620004e1818460208701620003bb565b9190910192915050565b60805161044e62000507600039600061015d015261044e6000f3fe608060405261000c61000e565b005b61001e610019610159565b6101e2565b565b61002982610206565b6040516001600160a01b038316907f1cf3b03a6cf19fa2baba4df148e9dcabedea7f8a5c07840e207e5c089be95d3e90600090a28051156100d4576100cf826001600160a01b0316635c60da1b6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156100a5573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906100c991906103c0565b826100e0565b505050565b6100dc610319565b5050565b6060600080846001600160a01b0316846040516100fd91906103e9565b600060405180830381855af49150503d8060008114610138576040519150601f19603f3d011682016040523d82523d6000602084013e61013d565b606091505b509150915061014d858383610338565b95945050505050565b90565b60007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316635c60da1b6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156101b9573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906101dd91906103c0565b905090565b3660008037600080366000845af43d6000803e808015610201573d6000f35b3d6000fd5b806001600160a01b03163b60000361024157604051631933b43b60e21b81526001600160a01b03821660048201526024015b60405180910390fd5b807fa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d5080546001600160a01b0319166001600160a01b0392831617905560408051635c60da1b60e01b81529051600092841691635c60da1b9160048083019260209291908290030181865afa1580156102bd573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906102e191906103c0565b9050806001600160a01b03163b6000036100dc57604051634c9c8ce360e01b81526001600160a01b0382166004820152602401610238565b341561001e5760405163b398979f60e01b815260040160405180910390fd5b60608261034d5761034882610397565b610390565b815115801561036457506001600160a01b0384163b155b1561038d57604051639996b31560e01b81526001600160a01b0385166004820152602401610238565b50805b9392505050565b8051156103a75780518082602001fd5b604051630a12f52160e11b815260040160405180910390fd5b6000602082840312156103d257600080fd5b81516001600160a01b038116811461039057600080fd5b6000825160005b8181101561040a57602081860181015185830152016103f0565b50600092019182525091905056fea2646970667358221220c5744800592430483b524bcc1263abe8201a2765cd6b5ebc4ae058970051a46864736f6c63430008120033\
+                type: string
+                x-go-name: BeaconAdminCreationCode
+            entryPoint:
+                description: The entry point address on the provided chain
+                example: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: EntryPoint
+            factory:
+                description: The factory address on the provided chain
+                example: 0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Factory
+            paymaster:
+                description: The paymaster address on the provided chain
+                example: 0x8D120E0A8a6aB93442B9839a7D6854De874A93fd\
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Paymaster
+            percentTxGasOvershoot:
+                description: |-
+                    The amount of gas overshoot (in percent) for the transaction.
+                    Note: default value is 50
+                example: 33
+                format: uint64
+                type: integer
+                x-go-name: PercentTxGasOvershoot
+            percentTxGasPriceOvershoot:
+                description: The amount of gas price overshoot (in percent) for the transaction.
+                example: "33"
+                type: string
+                x-go-name: PercentTxGasPriceOvershoot
+            percentUserOpGasOvershoot:
+                description: |-
+                    The amount of gas overshoot (in percent) for the UserOperations.
+                    Note: default value is 50
+                example: "33"
+                type: string
+                x-go-name: PercentUserOpGasOvershoot
+            rpc:
+                description: The RPC to be used on the request
+                example: https://wiser-yolo-star.ethereum-sepolia.quiknode.pro/{key}/
+                type: string
+                x-go-name: RPC
+            signer:
+                $ref: '#/definitions/SignerSettings'
+            useABI:
+                description: The abi to decode the response if applicable
+                example:
+                    - anonymous: false
+                      inputs:
+                        - indexed: true
+                          internalType: address
+                          name: from
+                          type: address
+                        - indexed: true
+                          internalType: address
+                          name: to
+                          type: address
+                        - indexed: false
+                          internalType: uint256
+                          name: value
+                          type: uint256
+                      name: Transfer
+                      type: event
+                items:
+                    additionalProperties: {}
+                    type: object
+                type: array
+                x-go-name: UseABI
+            validator:
+                description: The validator address on the provided chain
+                example: 0x0000000000000000000000000000000000000000\ //ECDSA_VALIDATOR address
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: Validator
+        required:
+            - rpc
+            - entryPoint
+            - signer
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    SignMessages:
+        description: Result defines the structure for an API sign message payload
+        properties:
+            eip712:
+                $ref: '#/definitions/EIP712'
+            format:
+                description: The format of the message output (hex or rsv)
+                example: rsv
+                type: string
+                x-go-name: Format
+            hashed:
+                description: The already specifies if message is already hashed
+                example: true
+                type: boolean
+                x-go-name: Hashed
+            messages:
+                description: The messages to be signed
+                example:
+                    - hello world
+                    - hello web3
+                    - blabla
+                items:
+                    type: string
+                type: array
+                x-go-name: Messages
+            signer:
+                $ref: '#/definitions/SignerSettings'
+        required:
+            - messages
+            - format
+            - signer
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    SignerSettings:
+        description: Defines the SignerSettings to be used
+        properties:
+            assetId:
+                description: |-
+                    The assetId of the client MPC
+                    Note: Only required if versionId is empty
+                example: '"ETH"'
+                type: string
+                x-go-name: AssetId
+            clientId:
+                description: The ClientId of the signer
+                example: e94aecb1-5daf-47f3-948f-2a639a56baa6
+                type: string
+                x-go-name: ClientId
+            versionId:
+                description: |-
+                    The versionId of the client HSM
+                    Note: Only required if assetId is empty
+                example: '"1"'
+                type: string
+                x-go-name: VersionId
+        required:
+            - clientId
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    SignerTransaction:
+        properties:
+            funcParams:
+                description: The params for the function signature if applicable
+                example: '[0xB72F28d9c0f72d488813E57581C17C466855E1F7\, 10]'
+                items: {}
+                type: array
+                x-go-name: Params
+            funcSignature:
+                description: The function signature for the read contract
+                example: transfer(address,uint256)
+                type: string
+                x-go-name: FuncSignature
+            settings:
+                $ref: '#/definitions/SignerTxSettings'
+            to:
+                description: The address to send the transaction
+                example: "0x000000000000000000000000000000000000dEaD"
+                maxLength: 42
+                minLength: 42
+                type: string
+                x-go-name: To
+            useABI:
+                description: The abi to decode the response if applicable
+                example:
+                    - anonymous: false
+                      inputs:
+                        - indexed: true
+                          internalType: address
+                          name: from
+                          type: address
+                        - indexed: true
+                          internalType: address
+                          name: to
+                          type: address
+                        - indexed: false
+                          internalType: uint256
+                          name: value
+                          type: uint256
+                      name: Transfer
+                      type: event
+                items:
+                    additionalProperties: {}
+                    type: object
+                type: array
+                x-go-name: UseABI
+            value:
+                description: The value to be sent with the transaction
+                example: 1 ether
+                type: string
+                x-go-name: Value
+        required:
+            - to
+            - settings
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    SignerTxSettings:
+        description: Defines the structure for an API signer transaction settings
+        properties:
+            percentTxGasOvershoot:
+                description: |-
+                    The amount of gas overshoot (in percent) for the transaction.
+                    Note: default value is 50
+                example: 33
+                format: uint64
+                type: integer
+                x-go-name: PercentTxGasOvershoot
+            percentTxGasPriceOvershoot:
+                description: |-
+                    The amount of gas price overshoot (in percent) for the transaction.
+                    Note: default value is 50
+                example: "33"
+                type: string
+                x-go-name: PercentTxGasPriceOvershoot
+            rpc:
+                description: The RPC to be used on the request
+                example: https://wiser-yolo-star.ethereum-sepolia.quiknode.pro/{key}/
+                type: string
+                x-go-name: RPC
+            signer:
+                $ref: '#/definitions/SignerSettings'
+            useABI:
+                description: The abi to decode the response if applicable
+                example:
+                    - anonymous: false
+                      inputs:
+                        - indexed: true
+                          internalType: address
+                          name: from
+                          type: address
+                        - indexed: true
+                          internalType: address
+                          name: to
+                          type: address
+                        - indexed: false
+                          internalType: uint256
+                          name: value
+                          type: uint256
+                      name: Transfer
+                      type: event
+                items:
+                    additionalProperties: {}
+                    type: object
+                type: array
+                x-go-name: UseABI
+        required:
+            - rpc
+            - signer
+        type: object
+        x-go-package: github.com/omnes-tech/smart-wallet-api/src/api/dtos
+    Type:
+        properties:
+            Elem:
+                $ref: '#/definitions/Type'
+            Size:
+                format: int64
+                type: integer
+            T:
+                format: uint8
+                type: integer
+            TupleElems:
+                items:
+                    $ref: '#/definitions/Type'
+                type: array
+            TupleRawName:
+                description: Tuple relative fields
+                type: string
+            TupleRawNames:
+                items:
+                    type: string
+                type: array
+            TupleType:
+                $ref: '#/definitions/Type'
+        title: Type is the reflection of the supported argument type.
+        type: object
+        x-go-package: github.com/ethereum/go-ethereum/accounts/abi
+host: lumx.io/docs
+info:
+    description: Account Abstraction api using Golang KNative
+    title: Account Abstraction.
+    version: 0.0.1
+paths:
+    /addError:
+        post:
+            description: Add an error to the already existing file allAbis
+            operationId: AddError
+            parameters:
+                - description: Filter add error input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/AddError'
+            responses:
+                "200":
+                    $ref: '#/responses/addErrorResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Events
+    /addEvent:
+        post:
+            description: Add an event to the already existing file allAbis
+            operationId: AddEvent
+            parameters:
+                - description: Filter events input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/AddEvent'
+            responses:
+                "200":
+                    $ref: '#/responses/addEventsResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Events
+    /check:
+        post:
+            description: Checks if a wallet exists based on the salt given
+            operationId: CheckWallet
+            parameters:
+                - description: Check Wallet input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/CheckAccounts'
+            responses:
+                "200":
+                    $ref: '#/responses/CheckResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /create:
+        post:
+            description: Create a new account based on the specified salt
+            operationId: CreateAccount
+            parameters:
+                - description: Create account input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/CreateAccounts'
+            responses:
+                "200":
+                    $ref: '#/responses/CreateResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /estimateGas:
+        post:
+            description: Estimate gas of an operation on the specified salt
+            operationId: EstimateGas
+            parameters:
+                - description: Estimate gas input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/Operations'
+            responses:
+                "200":
+                    $ref: '#/responses/EstimateResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /events?name=transfer:
+        get:
+            description: In the example the event name is "transfer"
+            operationId: GetEvent
+            responses:
+                "200":
+                    $ref: '#/responses/GetEventResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            summary: Get an already registered events of a smart contract.
+            tags:
+                - Events
+    /execute:
+        post:
+            description: Execute an operation on the specified salt
+            operationId: Execute
+            parameters:
+                - description: Execute input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/Operations'
+            responses:
+                "200":
+                    $ref: '#/responses/ExecuteResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /executeEncoded:
+        post:
+            description: Execute an encoded operation on the specified salt
+            operationId: ExecuteEncoded
+            parameters:
+                - description: Execute encoded input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/EncodedOperations'
+            responses:
+                "200":
+                    $ref: '#/responses/ExecuteEncodedResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /executePasskey:
+        post:
+            description: Execute an encoded operation on the specified passkey account
+            operationId: ExecutePasskey
+            parameters:
+                - description: Execute encoded passkey input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/PasskeyOperations'
+            responses:
+                "200":
+                    $ref: '#/responses/ExecutePasskeyResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /filterEvent:
+        post:
+            description: FIlter the already registered events of a smart contract
+            operationId: FilterEvent
+            parameters:
+                - description: Filter events input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/FilterEvent'
+            responses:
+                "200":
+                    $ref: '#/responses/filterEventsResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Events
+    /passkeyHash:
+        post:
+            description: Gets the passkey hash to be signed
+            operationId: PasskeyHash
+            parameters:
+                - description: Passkey hash input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/Operations'
+            responses:
+                "200":
+                    $ref: '#/responses/PasskeyHashResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /predict:
+        post:
+            description: Predict a salt wallet address
+            operationId: PredictWallet
+            parameters:
+                - description: Predict wallet input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/PredictAccounts'
+            responses:
+                "200":
+                    $ref: '#/responses/PredictResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /read:
+        post:
+            description: Read a contract information from the blockchain
+            operationId: ReadContract
+            parameters:
+                - description: Read contract input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/ReadContracts'
+            responses:
+                "200":
+                    $ref: '#/responses/ReadResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /receipt:
+        post:
+            description: Read a receipt information from the blockchain
+            operationId: ReadReceipt
+            parameters:
+                - description: Read receipt input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/Receipt'
+            responses:
+                "200":
+                    $ref: '#/responses/ReadReceiptResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /sign:
+        post:
+            description: Sign a message with HSM key
+            operationId: SignMessage
+            parameters:
+                - description: Sign message input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/SignMessages'
+            responses:
+                "200":
+                    $ref: '#/responses/SignResult'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /transactSigner:
+        post:
+            description: Executes a transaction with the client HSM directly
+            operationId: SignerTransaction
+            parameters:
+                - description: Signer Transaction input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/SignerTransaction'
+            responses:
+                "200":
+                    $ref: '#/responses/SignerResponse'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+    /unstuck:
+        post:
+            description: Route to unstuck a pending transaction
+            operationId: UnstuckTransaction
+            parameters:
+                - description: Unstuck Transaction input parameters
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/SignerTxSettings'
+            responses:
+                "200":
+                    $ref: '#/responses/UnstuckResponse'
+                "400":
+                    $ref: '#/responses/errorResponse'
+            tags:
+                - Accounts
+produces:
+    - application/json
+responses:
+    CheckResult:
+        description: The response for the check account route
+        schema:
+            items:
+                $ref: '#/definitions/ResultCheck'
+            type: array
+    CreateResult:
+        description: The response for the create route
+        schema:
+            $ref: '#/definitions/Response'
+    EstimateResult:
+        description: The response for the estimate gas route
+        schema:
+            $ref: '#/definitions/EstimateGasResponse'
+    ExecuteEncodedResult:
+        description: The response for the execute encoded route
+        schema:
+            $ref: '#/definitions/Response'
+    ExecutePasskeyResult:
+        description: The response for the execute encoded passkey route
+        schema:
+            $ref: '#/definitions/Response'
+    ExecuteResult:
+        description: The response for the execute route
+        schema:
+            $ref: '#/definitions/Response'
+    PasskeyHashResult:
+        description: The response for the Passkey Hash route
+        schema:
+            $ref: '#/definitions/PasskeyHashResponse'
+    PredictResult:
+        description: The response for the predict route
+        schema:
+            items:
+                $ref: '#/definitions/ResultPredict'
+            type: array
+    ReadReceiptResult:
+        description: The response for the read receipt
+        schema:
+            $ref: '#/definitions/ReceiptResponse'
+    ReadResult:
+        description: The response for the read contract route
+        schema:
+            items:
+                $ref: '#/definitions/ResultRead'
+            type: array
+    SignResult:
+        description: The response for the sign message route
+        schema:
+            items:
+                $ref: '#/definitions/ResultSign'
+            type: array
+    SignerResponse:
+        description: The response for the signer transaction route
+        schema:
+            $ref: '#/definitions/Response'
+    UnstuckResponse:
+        description: The response for the unstuck transaction route
+        schema:
+            $ref: '#/definitions/Response'
+    addErrorResult:
+        description: The response for the add error route
+        schema:
+            $ref: '#/definitions/AddErrorResponse'
+    addEventsResult:
+        description: The response for the add events route
+        schema:
+            $ref: '#/definitions/AddEventResponse'
+    errorResponse:
+        description: Generic error message returned as a string
+        schema:
+            $ref: '#/definitions/GenericError'
+    filterEventsResult:
+        description: The response for the filter events route
+        schema:
+            $ref: '#/definitions/FilterEventResponse'
+schemes:
+    - http
+swagger: "2.0"

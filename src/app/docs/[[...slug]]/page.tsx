@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { source } from '@/lib/source';
 import {
   DocsPage,
@@ -16,12 +17,12 @@ export default async function Page(props: {
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
-  const MDXContent = page.data.body;
+  const MDXContent = (page.data as any).body;
 
   return (
-    <DocsPage toc={page.data.toc} full={page.data.full}>
-      <DocsTitle>{page.data.title}</DocsTitle>
-      <DocsDescription>{page.data.description}</DocsDescription>
+    <DocsPage toc={(page.data as any).toc} full={(page.data as any).full}>
+      <DocsTitle>{(page.data as any).title}</DocsTitle>
+      <DocsDescription>{(page.data as any).description}</DocsDescription>
       <DocsBody>
         <MDXContent
           components={getMDXComponents({
@@ -46,7 +47,7 @@ export async function generateMetadata(props: {
   if (!page) notFound();
 
   return {
-    title: page.data.title,
-    description: page.data.description,
+    title: (page.data as any).title,
+    description: (page.data as any).description,
   };
 }

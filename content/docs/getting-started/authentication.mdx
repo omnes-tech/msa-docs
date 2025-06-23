@@ -1,0 +1,377 @@
+---
+title: Authentication & Setup
+description: Learn how to configure HSM/MPC authentication for secure wallet operations with MSA API.
+---
+
+# Authentication & Setup
+
+The MSA API uses Hardware Security Modules (HSM) or Multi-Party Computation (MPC) for secure cryptographic operations. This guide explains how to set up authentication for different signing providers.
+
+## Signing Providers
+
+MSA API currently supports:
+
+- **Fireblocks HSM**: Hardware Security Module integration
+- **Fireblocks MPC**: Multi-Party Computation signing
+- More providers coming soon
+
+## Fireblocks Integration
+
+### Prerequisites
+
+1. **Fireblocks Account**: Active Fireblocks workspace
+2. **API Credentials**: Client ID and Version ID (HSM) or Asset ID (MPC)
+3. **Network Configuration**: Proper RPC endpoints and contract addresses
+
+### HSM Configuration
+
+For Fireblocks HSM, you'll need:
+
+```typescript
+interface HSMConfig {
+  clientId: string;     // Your Fireblocks client ID
+  versionId: string;    // HSM version identifier
+}
+```
+
+### MPC Configuration
+
+For Fireblocks MPC, you'll need:
+
+```typescript
+interface MPCConfig {
+  clientId: string;     // Your Fireblocks client ID
+  assetId: string;      // Asset identifier (e.g., "ETH", "MATIC")
+}
+```
+
+## API Settings Structure
+
+Every MSA API request requires a `settings` object with authentication and network configuration:
+
+```typescript
+interface Settings {
+  // Network Configuration
+  rpc: string;                    // Blockchain RPC endpoint
+  factory: string;                // Wallet factory contract address
+  validator: string;              // Validator contract address
+  entryPoint: string;             // EIP-4337 entry point address
+  beaconAdminAddress: string;     // Beacon admin contract address
+  
+  // Optional Contracts
+  paymaster?: string;             // Paymaster contract (optional)
+  aggregator?: string;            // Signature aggregator (optional)
+  beaconAdminCreationCode?: string; // Beacon creation bytecode
+  
+  // Gas Configuration
+  percentUserOpGasOvershoot?: number;     // UserOp gas buffer (default: 50%)
+  percentTxGasOvershoot?: number;         // Transaction gas buffer (default: 50%)
+  percentTxGasPriceOvershoot?: number;    // Gas price buffer (default: 20%)
+  
+  // HSM/MPC Authentication
+  signer: {
+    clientId: string;             // Fireblocks client ID
+    versionId?: string;           // For HSM (required if no assetId)
+    assetId?: string;             // For MPC (required if no versionId)
+  };
+  
+  // Optional Features
+  useABI?: Array<any>;            // Custom ABI for response decoding
+}
+```
+
+## Network Configurations
+
+### Polygon Amoy Testnet
+
+```json
+{
+  "rpc": "https://rpc-amoy.polygon.technology/",
+  "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+  "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+  "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+  "beaconAdminCreationCode": "0x60a060405260405161059d38038061059d83398101604081905261002291610354565b..."
+}
+```
+
+### Polygon Mainnet
+
+```json
+{
+  "rpc": "https://polygon-rpc.com/",
+  "factory": "0x...",
+  "validator": "0x...",
+  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+  "beaconAdminAddress": "0x..."
+}
+```
+
+### Base Sepolia Testnet
+
+```json
+{
+  "rpc": "https://sepolia.base.org/",
+  "factory": "0x...",
+  "validator": "0x...",
+  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+  "beaconAdminAddress": "0x..."
+}
+```
+
+## Example Authentication Setup
+
+### TypeScript SDK
+
+```typescript
+import { MSAClient } from '@omnes/msa-sdk';
+
+// HSM Configuration
+const hsm_client = new MSAClient({
+  baseURL: 'https://api.msa.omnes.tech',
+  defaultSettings: {
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+    entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618',
+    signer: {
+      clientId: 'e94aecb1-5daf-47f3-948f-2a639a56baa6',
+      versionId: '1'
+    }
+  }
+});
+
+// MPC Configuration
+const mpc_client = new MSAClient({
+  baseURL: 'https://api.msa.omnes.tech',
+  defaultSettings: {
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+    entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618',
+    signer: {
+      clientId: 'e94aecb1-5daf-47f3-948f-2a639a56baa6',
+      assetId: 'MATIC'
+    }
+  }
+});
+```
+
+### cURL Example
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/create" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [{
+      "walletCustody": 1,
+      "salt": "user@example.com"
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+      "beaconAdminCreationCode": "0x60a060405260405161059d...",
+      "signer": {
+        "clientId": "e94aecb1-5daf-47f3-948f-2a639a56baa6",
+        "versionId": "1"
+      }
+    }
+  }'
+```
+
+### Python Example
+
+```python
+import requests
+
+# Configuration
+config = {
+    "base_url": "https://api.msa.omnes.tech",
+    "settings": {
+        "rpc": "https://rpc-amoy.polygon.technology/",
+        "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+        "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+        "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+        "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+        "signer": {
+            "clientId": "e94aecb1-5daf-47f3-948f-2a639a56baa6",
+            "versionId": "1"
+        }
+    }
+}
+
+# Create wallet request
+response = requests.post(
+    f"{config['base_url']}/create",
+    json={
+        "accounts": [{
+            "walletCustody": 1,
+            "salt": "user@example.com"
+        }],
+        "settings": config["settings"]
+    }
+)
+```
+
+## Gas Configuration
+
+### UserOperation Gas Overshoot
+
+Adds a buffer to gas estimation for UserOperations to prevent failures:
+
+```typescript
+{
+  percentUserOpGasOvershoot: 60  // 60% buffer (recommended)
+}
+```
+
+### Transaction Gas Overshoot
+
+Adds a buffer to transaction gas estimation:
+
+```typescript
+{
+  percentTxGasOvershoot: 20  // 20% buffer (recommended)
+}
+```
+
+### Gas Price Overshoot
+
+Adds a buffer to gas price to ensure transaction inclusion:
+
+```typescript
+{
+  percentTxGasPriceOvershoot: 20  // 20% buffer (recommended)
+}
+```
+
+## Security Best Practices
+
+### 1. Environment Variables
+
+Never hardcode credentials in your application:
+
+```bash
+# .env file
+MSA_CLIENT_ID=e94aecb1-5daf-47f3-948f-2a639a56baa6
+MSA_VERSION_ID=1
+MSA_RPC_URL=https://rpc-amoy.polygon.technology/
+```
+
+```typescript
+const client = new MSAClient({
+  defaultSettings: {
+    rpc: process.env.MSA_RPC_URL,
+    signer: {
+      clientId: process.env.MSA_CLIENT_ID,
+      versionId: process.env.MSA_VERSION_ID
+    }
+    // ... other settings
+  }
+});
+```
+
+### 2. Network Validation
+
+Always validate network configurations:
+
+```typescript
+const SUPPORTED_NETWORKS = {
+  80002: { // Polygon Amoy
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    // ... other addresses
+  },
+  137: { // Polygon Mainnet
+    rpc: 'https://polygon-rpc.com/',
+    factory: '0x...',
+    // ... other addresses
+  }
+};
+
+function getNetworkConfig(chainId: number) {
+  const config = SUPPORTED_NETWORKS[chainId];
+  if (!config) {
+    throw new Error(`Unsupported network: ${chainId}`);
+  }
+  return config;
+}
+```
+
+### 3. Request Timeout
+
+Set appropriate timeouts for API requests:
+
+```typescript
+const client = new MSAClient({
+  timeout: 30000, // 30 seconds
+  retries: 3,
+  // ... other options
+});
+```
+
+## Error Handling
+
+### Common Authentication Errors
+
+| Error | Description | Solution |
+|-------|-------------|----------|
+| `Invalid client ID` | Fireblocks client ID is incorrect | Verify your Fireblocks credentials |
+| `Version not found` | HSM version doesn't exist | Check your version ID |
+| `Asset not supported` | MPC asset not available | Use supported asset ID |
+| `Network connection failed` | RPC endpoint unreachable | Verify RPC URL and network status |
+
+### Example Error Handling
+
+```typescript
+try {
+  const result = await client.createWallet({
+    walletCustody: 1,
+    salt: "user@example.com"
+  });
+  console.log('Wallet created:', result);
+} catch (error) {
+  if (error.code === 'INVALID_CLIENT_ID') {
+    console.error('Please check your Fireblocks credentials');
+  } else if (error.code === 'NETWORK_ERROR') {
+    console.error('Network connection failed, please try again');
+  } else {
+    console.error('Unexpected error:', error.message);
+  }
+}
+```
+
+## Testing Your Setup
+
+Verify your authentication setup with a simple wallet prediction:
+
+```typescript
+// Test prediction (doesn't require signing)
+const prediction = await client.predictWallet({
+  walletCustody: 1,
+  salt: "test@example.com"
+});
+
+console.log('Predicted wallet address:', prediction.walletAddress);
+```
+
+## Next Steps
+
+Once your authentication is configured:
+
+1. **[Create Your First Wallet](/docs/getting-started/quick-start)** - Deploy a test wallet
+2. **[Explore Custody Types](/docs/wallet-management/custody-types)** - Learn about different security models
+3. **[Start Building](/docs/sdk/typescript-sdk)** - Integrate with your application
+
+---
+
+<div className="mt-8 p-4 bg-green-50 rounded-lg">
+  <p className="text-green-800">
+    <strong>✅ Pro Tip:</strong> Start with testnet environments and ECDSA_VALIDATOR custody type for initial testing before moving to production with advanced custody features.
+  </p>
+</div> 
