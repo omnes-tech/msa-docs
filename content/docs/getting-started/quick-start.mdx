@@ -11,85 +11,147 @@ This guide will walk you through creating your first Account Abstraction wallet 
 
 Before starting, ensure you have:
 
-- **Fireblocks Credentials**: Client ID and Version ID (HSM) or Asset ID (MPC)
-- **Network Access**: RPC endpoint for your target blockchain
-- **API Base URL**: `https://api.msa.omnes.tech`
+1. **API Key**: Your MSA API key (obtain from [Contact Us](/docs#contact-us))
+2. **Signing Credentials**: One of the following:
+   - **Private Key** (for testing): Your Ethereum private key
+   - **Fireblocks HSM**: Client ID and Version ID
+   - **Fireblocks MPC**: Client ID and Asset ID
+   - **Google Cloud KMS**: GCP credentials and key information
+3. **Network Access**: RPC endpoint for your target blockchain
+4. **API Base URL**: `https://api.msa.omnes.tech`
 
-## Step 1: Predict Wallet Address
+### Step 0: Get Your API Key
 
-First, let's predict the wallet address without deploying it. This is useful for funding the wallet before creation.
+If you don't have an API key yet:
 
-<Tabs items={["TypeScript", "Python", "cURL"]}>
-<Tab value="TypeScript">
+1. [Schedule a meeting](https://calendly.com/omnes-blockchain/30min?month=2025-11) with our team, or
+2. [Send us an email](mailto:gus@omnes.dev) to request access
+
+Once you receive your API key, store it securely:
+
+```bash
+# .env file
+API_KEY=your-api-key-here
+PRIVATE_KEY=0x1234... # For testing only
+RPC_URL=https://rpc-amoy.polygon.technology/
+```
+
+## Step 1: Initialize the SDK
+
+First, set up your environment and initialize the SDK with your API key and signer.
+
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
+
+### Using SmartWallet SDK (Recommended)
+
+```typescript
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+// Load environment variables
+const apiKey = process.env.API_KEY!;
+const rpcURL = process.env.RPC_URL!;
+const privateKey = process.env.PRIVATE_KEY!; // For testing only
+
+// Create a signer
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+
+// Initialize SmartWallet with API key
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,           // Message sign method
+  signer.signMessage,           // UserOp hash sign method
+  signer.getEVMAddress(),       // Signer address
+  rpcURL,                       // RPC endpoint
+  apiKey,                       // Your API key (required!)
+  null,                         // Contracts (null = fetch from API)
+  false                         // Use remote bundler
+);
+
+console.log('SmartWallet initialized successfully!');
+```
+
+### Using MSAClient (High-Level SDK)
 
 ```typescript
 import { MSAClient } from '@omnes/msa-sdk';
 
 const client = new MSAClient({
   baseURL: 'https://api.msa.omnes.tech',
+  apiKey: process.env.API_KEY!, // API key for authentication
   defaultSettings: {
     rpc: 'https://rpc-amoy.polygon.technology/',
     factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
     validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
     entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618'
+    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618',
+    signer: {
+      clientId: process.env.FIREBLOCKS_CLIENT_ID!,
+      versionId: process.env.FIREBLOCKS_VERSION_ID!
+    }
   }
 });
-
-async function predictWallet() {
-  const result = await client.predict({
-    accounts: [{
-      walletCustody: 1, // ECDSA_VALIDATOR
-      salt: "user@example.com"
-    }],
-    settings: client.defaultSettings
-  });
-  
-  console.log('Predicted wallet address:', result.predictions[0].wallet);
-  return result.predictions[0].wallet;
-}
-
-const walletAddress = await predictWallet();
 ```
 
 </Tab>
-<Tab value="Python">
+<Tab value="REST API">
 
-```python
-import requests
+```bash
+# Set your API key as an environment variable
+export API_KEY="your-api-key-here"
 
-def predict_wallet():
-    url = "https://api.msa.omnes.tech/predict"
-    
-    payload = {
-        "accounts": [{
-            "walletCustody": 1,  # ECDSA_VALIDATOR
-            "salt": "user@example.com"
-        }],
-        "settings": {
-            "rpc": "https://rpc-amoy.polygon.technology/",
-            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
-            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
-            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
-        }
-    }
-    
-    response = requests.post(url, json=payload)
-    result = response.json()
-    
-    wallet_address = result['predictions'][0]['wallet']
-    print(f'Predicted wallet address: {wallet_address}')
-    return wallet_address
-
-wallet_address = predict_wallet()
+# Test API connection
+curl -X GET "https://api.msa.omnes.tech/getbundleraddress" \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json"
 ```
 
 </Tab>
-<Tab value="cURL">
+</Tabs>
+
+## Step 2: Predict Wallet Address
+
+Predict the wallet address before deploying. This is useful for funding the wallet before creation.
+
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations } from '@omnes/smartwallet-ts-sdk';
+
+// Initialize (as shown in Step 1)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey,
+  null,
+  false
+);
+
+// Predict wallet address
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1, // ECDSA_VALIDATOR
+    salt: "user@example.com",
+    publicKeys: [] // Empty for ECDSA
+  },
+  operations: [], // No operations needed for prediction
+  settings: {}
+}];
+
+// Get predicted address
+const predictedAddress = smartWallet.predictWalletAddress("user@example.com");
+console.log('Predicted wallet address:', predictedAddress);
+```
+
+</Tab>
+<Tab value="REST API">
 
 ```bash
 curl -X POST "https://api.msa.omnes.tech/predict" \
+  -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "accounts": [{
@@ -106,6 +168,17 @@ curl -X POST "https://api.msa.omnes.tech/predict" \
   }'
 ```
 
+**Expected Response:**
+```json
+{
+  "predictions": [{
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "salt": "user@example.com",
+    "walletCustody": 1
+  }]
+}
+```
+
 </Tab>
 </Tabs>
 
@@ -120,7 +193,7 @@ curl -X POST "https://api.msa.omnes.tech/predict" \
 }
 ```
 
-## Step 2: Fund the Wallet (Optional)
+## Step 3: Fund the Wallet (Optional)
 
 For wallet creation to succeed, the predicted address needs sufficient native tokens to pay for gas. You can:
 
@@ -136,83 +209,57 @@ cast send 0x28097eF2268B553783D9c32A33ECb1bB78B209F3 \
   --rpc-url https://rpc-amoy.polygon.technology/
 ```
 
-## Step 3: Create the Wallet
+## Step 4: Create the Wallet
 
-Now let's deploy the wallet. This requires HSM/MPC signing credentials.
+Deploy the wallet. This requires signing credentials (private key for testing, or HSM/MPC for production).
 
-<Tabs items={["TypeScript", "Python", "cURL"]}>
-<Tab value="TypeScript">
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
 
 ```typescript
-async function createWallet() {
-  const result = await client.create({
-    accounts: [{
-      walletCustody: 1, // ECDSA_VALIDATOR
-      salt: "user@example.com"
-    }],
-    settings: {
-      ...client.defaultSettings,
-      beaconAdminCreationCode: "0x60a060405260405161059d38038061059d...", // Full bytecode
-      signer: {
-        clientId: "e94aecb1-5daf-47f3-948f-2a639a56baa6",
-        versionId: "1"
-      }
-    }
-  });
-  
-  console.log('Wallet created!');
-  console.log('Transaction hash:', result.txHash);
-  console.log('Status:', result.status === 1 ? 'Success' : 'Failed');
-  
-  return result;
-}
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
 
-const createResult = await createWallet();
+// Initialize SmartWallet (from Step 1)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey,
+  null,
+  false // Use remote bundler (requires API key)
+);
+
+// Create wallet operation
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1, // ECDSA_VALIDATOR
+    salt: "user@example.com",
+    publicKeys: []
+  },
+  operations: [], // Empty operations array = just create wallet
+  settings: {}
+}];
+
+// Create wallet using remote bundler
+const result = await smartWallet.buildAndRequestSendUserOperations(
+  accountOperations,
+  [], // useABI
+  []  // additional signers
+);
+
+console.log('Wallet created!');
+console.log('Transaction hash:', result.txHash);
+console.log('Status:', result.status === 1 ? 'Success' : 'Failed');
 ```
 
 </Tab>
-<Tab value="Python">
-
-```python
-def create_wallet():
-    url = "https://api.msa.omnes.tech/create"
-    
-    payload = {
-        "accounts": [{
-            "walletCustody": 1,
-            "salt": "user@example.com"
-        }],
-        "settings": {
-            "rpc": "https://rpc-amoy.polygon.technology/",
-            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
-            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
-            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
-            "beaconAdminCreationCode": "0x60a060405260405161059d...",  # Full bytecode
-            "signer": {
-                "clientId": "e94aecb1-5daf-47f3-948f-2a639a56baa6",
-                "versionId": "1"
-            }
-        }
-    }
-    
-    response = requests.post(url, json=payload)
-    result = response.json()
-    
-    print('Wallet created!')
-    print(f'Transaction hash: {result["txHash"]}')
-    print(f'Status: {"Success" if result["status"] == 1 else "Failed"}')
-    
-    return result
-
-create_result = create_wallet()
-```
-
-</Tab>
-<Tab value="cURL">
+<Tab value="REST API">
 
 ```bash
 curl -X POST "https://api.msa.omnes.tech/create" \
+  -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "accounts": [{
@@ -227,12 +274,14 @@ curl -X POST "https://api.msa.omnes.tech/create" \
       "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
       "beaconAdminCreationCode": "0x60a060405260405161059d...",
       "signer": {
-        "clientId": "e94aecb1-5daf-47f3-948f-2a639a56baa6",
+        "clientId": "your-fireblocks-client-id",
         "versionId": "1"
       }
     }
   }'
 ```
+
+**Note**: For REST API, you can also use private key signing by providing the private key in the signer configuration, but this is **not recommended for production**.
 
 </Tab>
 </Tabs>
@@ -253,71 +302,49 @@ curl -X POST "https://api.msa.omnes.tech/create" \
 }
 ```
 
-## Step 4: Verify Wallet Creation
+## Step 5: Verify Wallet Creation
 
 Check if the wallet was successfully created:
 
-<Tabs items={["TypeScript", "Python", "cURL"]}>
-<Tab value="TypeScript">
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
 
 ```typescript
-async function checkWallet() {
-  const result = await client.check({
-    accounts: [{
-      walletCustody: 1,
-      salt: "user@example.com"
-    }],
-    settings: client.defaultSettings
-  });
-  
-  const wallet = result.results[0];
-  console.log('Wallet exists:', wallet.exists);
-  console.log('Wallet address:', wallet.wallet);
-  
-  return wallet.exists;
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+// Initialize SmartWallet (from Step 1)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey,
+  null,
+  false
+);
+
+// Verify wallet exists
+const accounts = await smartWallet.checkAccounts(
+  ["user@example.com"], // Salts
+  []                    // Wallet addresses (empty for salt-based check)
+);
+
+const account = accounts[0];
+if (account?.exists) {
+  console.log('✅ Wallet exists!');
+  console.log('Wallet address:', account.wallet);
+} else {
+  console.log('❌ Wallet does not exist yet');
 }
-
-const exists = await checkWallet();
 ```
 
 </Tab>
-<Tab value="Python">
-
-```python
-def check_wallet():
-    url = "https://api.msa.omnes.tech/check"
-    
-    payload = {
-        "accounts": [{
-            "walletCustody": 1,
-            "salt": "user@example.com"
-        }],
-        "settings": {
-            "rpc": "https://rpc-amoy.polygon.technology/",
-            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
-            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
-            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
-        }
-    }
-    
-    response = requests.post(url, json=payload)
-    result = response.json()
-    
-    wallet = result['results'][0]
-    print(f'Wallet exists: {wallet["exists"]}')
-    print(f'Wallet address: {wallet["wallet"]}')
-    
-    return wallet['exists']
-
-exists = check_wallet()
-```
-
-</Tab>
-<Tab value="cURL">
+<Tab value="REST API">
 
 ```bash
 curl -X POST "https://api.msa.omnes.tech/check" \
+  -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "accounts": [{
@@ -334,94 +361,83 @@ curl -X POST "https://api.msa.omnes.tech/check" \
   }'
 ```
 
+**Expected Response:**
+```json
+{
+  "results": [{
+    "exists": true,
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "salt": "user@example.com",
+    "walletCustody": 1
+  }]
+}
+```
+
 </Tab>
 </Tabs>
 
-## Step 5: Execute Your First Transaction
+## Step 6: Execute Your First Transaction
 
-Now let's execute a simple transaction from the wallet. We'll approve an ERC-20 token:
+Execute a simple transaction from the wallet. We'll approve an ERC-20 token:
 
-<Tabs items={["TypeScript", "Python", "cURL"]}>
-<Tab value="TypeScript">
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
 
 ```typescript
-async function executeTransaction() {
-  const result = await client.execute({
-    operations: [{
-      walletCustody: 1,
-      salt: "user@example.com",
-      to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Token address
-      funcSignature: "approve(address,uint256)",
-      funcParams: [
-        "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff", // Spender
-        "1000000000000000000" // Amount (1 token)
-      ]
-    }],
-    settings: {
-      ...client.defaultSettings,
-      signer: {
-        clientId: "e94aecb1-5daf-47f3-948f-2a639a56baa6",
-        versionId: "1"
-      }
-    }
-  });
-  
-  console.log('Transaction executed!');
-  console.log('Transaction hash:', result.txHash);
-  
-  return result;
-}
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
 
-const executeResult = await executeTransaction();
+// Initialize SmartWallet (from Step 1)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey,
+  null,
+  false
+);
+
+// Define the operation
+const operation: Operation = {
+  to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Token contract address
+  value: BigInt(0), // No ETH sent
+  funcSignature: "approve(address,uint256)",
+  params: [
+    "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff", // Spender address
+    BigInt("1000000000000000000") // Amount (1 token, 18 decimals)
+  ]
+};
+
+// Create account operations
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1,
+    salt: "user@example.com",
+    publicKeys: []
+  },
+  operations: [operation],
+  settings: {}
+}];
+
+// Execute transaction
+const result = await smartWallet.buildAndRequestSendUserOperations(
+  accountOperations,
+  [], // useABI
+  []  // additional signers
+);
+
+console.log('Transaction executed!');
+console.log('Transaction hash:', result.txHash);
+console.log('Status:', result.status === 1 ? 'Success' : 'Failed');
 ```
 
 </Tab>
-<Tab value="Python">
-
-```python
-def execute_transaction():
-    url = "https://api.msa.omnes.tech/execute"
-    
-    payload = {
-        "operations": [{
-            "walletCustody": 1,
-            "salt": "user@example.com",
-            "to": "0x097d4Aed5924e2172451973153Fc0e03407eD1F9",
-            "funcSignature": "approve(address,uint256)",
-            "funcParams": [
-                "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff",
-                "1000000000000000000"
-            ]
-        }],
-        "settings": {
-            "rpc": "https://rpc-amoy.polygon.technology/",
-            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
-            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
-            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
-            "signer": {
-                "clientId": "e94aecb1-5daf-47f3-948f-2a639a56baa6",
-                "versionId": "1"
-            }
-        }
-    }
-    
-    response = requests.post(url, json=payload)
-    result = response.json()
-    
-    print('Transaction executed!')
-    print(f'Transaction hash: {result["txHash"]}')
-    
-    return result
-
-execute_result = execute_transaction()
-```
-
-</Tab>
-<Tab value="cURL">
+<Tab value="REST API">
 
 ```bash
 curl -X POST "https://api.msa.omnes.tech/execute" \
+  -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "operations": [{
@@ -441,7 +457,7 @@ curl -X POST "https://api.msa.omnes.tech/execute" \
       "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
       "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
       "signer": {
-        "clientId": "e94aecb1-5daf-47f3-948f-2a639a56baa6",
+        "clientId": "your-fireblocks-client-id",
         "versionId": "1"
       }
     }
@@ -453,85 +469,129 @@ curl -X POST "https://api.msa.omnes.tech/execute" \
 
 ## Complete Workflow Example
 
-Here's a complete end-to-end example combining all steps:
+Here's a complete end-to-end example using the SmartWallet SDK:
 
 ```typescript
-import { MSAClient, CustodyType } from '@omnes/msa-sdk';
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+import dotenv from 'dotenv';
 
-async function walletWorkflow() {
-  const client = new MSAClient({
-    baseURL: 'https://api.msa.omnes.tech',
-    defaultSettings: {
-      rpc: 'https://rpc-amoy.polygon.technology/',
-      factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
-      validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
-      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-      beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618',
-      beaconAdminCreationCode: '0x60a060405260405161059d...',
-      signer: {
-        clientId: process.env.MSA_CLIENT_ID!,
-        versionId: process.env.MSA_VERSION_ID!
-      }
-    }
-  });
+dotenv.config();
 
+async function completeWalletWorkflow() {
+  // Load configuration
+  const apiKey = process.env.API_KEY!;
+  const rpcURL = process.env.RPC_URL!;
+  const privateKey = process.env.PRIVATE_KEY!;
   const userSalt = `user-${Date.now()}@example.com`;
 
   try {
-    // 1. Predict wallet address
-    console.log('🔮 Predicting wallet address...');
-    const prediction = await client.predict({
-      accounts: [{ walletCustody: CustodyType.ECDSA_VALIDATOR, salt: userSalt }]
-    });
-    const walletAddress = prediction.predictions[0].wallet;
-    console.log(`✅ Predicted address: ${walletAddress}`);
+    // Step 1: Initialize SmartWallet
+    console.log('🔧 Initializing SmartWallet...');
+    const signer = await PKSigner.create(privateKey as `0x${string}`);
+    const smartWallet = await SmartWallet.create(
+      signer.signMessage,
+      signer.signMessage,
+      signer.getEVMAddress(),
+      rpcURL,
+      apiKey,
+      null, // Contracts will be fetched from API using API key
+      false // Use remote bundler
+    );
+    console.log('✅ SmartWallet initialized');
 
-    // 2. Check if wallet already exists
+    // Step 2: Predict wallet address
+    console.log('🔮 Predicting wallet address...');
+    const predictedAddress = smartWallet.predictWalletAddress(userSalt);
+    console.log(`✅ Predicted address: ${predictedAddress}`);
+
+    // Step 3: Check if wallet exists
     console.log('🔍 Checking wallet existence...');
-    const checkResult = await client.check({
-      accounts: [{ walletCustody: CustodyType.ECDSA_VALIDATOR, salt: userSalt }]
-    });
+    const accountOperations: AccountOperations[] = [{
+      account: {
+        walletCustody: 1,
+        salt: userSalt,
+        publicKeys: []
+      },
+      operations: [],
+      settings: {}
+    }];
     
-    if (checkResult.results[0].exists) {
-      console.log('ℹ️ Wallet already exists, skipping creation');
+    // Check wallet existence using checkAccounts
+    const accounts = await smartWallet.checkAccounts([userSalt], []);
+    const walletExists = accounts[0]?.exists || false;
+    
+    if (walletExists) {
+      console.log('ℹ️ Wallet already exists');
     } else {
-      // 3. Create wallet
-      console.log('🏗️ Creating wallet...');
-      const createResult = await client.create({
-        accounts: [{ walletCustody: CustodyType.ECDSA_VALIDATOR, salt: userSalt }]
-      });
-      console.log(`✅ Wallet created! Tx: ${createResult.txHash}`);
+      console.log('ℹ️ Wallet does not exist, will create');
     }
 
-    // 4. Execute a transaction
+    // Step 4: Create wallet (if needed)
+    if (!walletExists) {
+      console.log('🏗️ Creating wallet...');
+      const createResult = await smartWallet.buildAndRequestSendUserOperations(
+        accountOperations,
+        [],
+        []
+      );
+      console.log(`✅ Wallet created! Tx: ${createResult.txHash}`);
+      // Wait for confirmation
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+
+    // Step 5: Execute a transaction
     console.log('⚡ Executing transaction...');
-    const executeResult = await client.execute({
-      operations: [{
-        walletCustody: CustodyType.ECDSA_VALIDATOR,
-        salt: userSalt,
-        to: '0x097d4Aed5924e2172451973153Fc0e03407eD1F9',
-        funcSignature: 'approve(address,uint256)',
-        funcParams: ['0xA65aae78EdEF916d4102BA7b5672068C0D35fbff', '1000000']
-      }]
-    });
+    const operation: Operation = {
+      to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Token address
+      value: BigInt(0),
+      funcSignature: "approve(address,uint256)",
+      params: [
+        "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff", // Spender
+        BigInt("1000000000000000000") // Amount
+      ]
+    };
+
+    const executeOperations: AccountOperations[] = [{
+      account,
+      operations: [operation],
+      settings: {}
+    }];
+
+    const executeResult = await smartWallet.buildAndRequestSendUserOperations(
+      executeOperations,
+      [],
+      []
+    );
     console.log(`✅ Transaction executed! Tx: ${executeResult.txHash}`);
 
     return {
-      walletAddress,
-      createTx: executeResult.txHash,
-      executeTx: executeResult.txHash
+      walletAddress: predictedAddress,
+      txHash: executeResult.txHash
     };
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error:', error);
     throw error;
   }
 }
 
 // Run the workflow
-walletWorkflow()
-  .then(result => console.log('🎉 Workflow completed:', result))
-  .catch(error => console.error('💥 Workflow failed:', error));
+completeWalletWorkflow()
+  .then(result => {
+    console.log('🎉 Workflow completed successfully!');
+    console.log('Result:', result);
+  })
+  .catch(error => {
+    console.error('💥 Workflow failed:', error);
+    process.exit(1);
+  });
+```
+
+**Environment Variables (.env):**
+```bash
+API_KEY=your-api-key-here
+PRIVATE_KEY=0x1234...
+RPC_URL=https://rpc-amoy.polygon.technology/
 ```
 
 ## Common Issues & Solutions
@@ -548,7 +608,17 @@ const balance = await provider.getBalance(walletAddress);
 console.log('Wallet balance:', ethers.utils.formatEther(balance));
 ```
 
-### 2. Invalid Client ID
+### 2. Invalid API Key
+
+**Error**: "Invalid API key" or "Unauthorized"
+
+**Solution**: 
+- Verify your API key is correct: `echo $API_KEY`
+- Ensure the API key is included in the `X-API-Key` header for REST API requests
+- Verify your API key is passed to `SmartWallet.create()` when using the SDK
+- Request a new API key if needed: [Contact Us](/docs#contact-us)
+
+### 3. Invalid Client ID or Signing Credentials
 
 **Error**: "Invalid client ID" or authentication failure
 
@@ -556,11 +626,11 @@ console.log('Wallet balance:', ethers.utils.formatEther(balance));
 
 ```bash
 # Check environment variables
-echo $MSA_CLIENT_ID
-echo $MSA_VERSION_ID
+echo $FIREBLOCKS_CLIENT_ID
+echo $FIREBLOCKS_VERSION_ID
 ```
 
-### 3. Network Connection Issues
+### 4. Network Connection Issues
 
 **Error**: "Network connection failed"
 

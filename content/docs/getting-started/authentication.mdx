@@ -5,7 +5,78 @@ description: Learn how to configure HSM/MPC authentication for secure wallet ope
 
 # Authentication & Setup
 
-The MSA API uses Hardware Security Modules (HSM) or Multi-Party Computation (MPC) for secure cryptographic operations. This guide explains how to set up authentication for different signing providers.
+The MSA API requires two types of authentication:
+
+1. **API Key**: Required for all API requests to identify your account and access contract addresses
+2. **HSM/MPC Credentials**: Required for signing operations (Fireblocks client ID, version ID, or asset ID)
+
+This guide explains how to obtain your API key and configure HSM/MPC authentication for secure wallet operations.
+
+## Obtaining Your API Key
+
+Before you can use the MSA API, you need to obtain an API key. This key is used to:
+- Authenticate your requests to the MSA API
+- Access contract addresses for supported networks
+- Use the remote bundler service
+- Identify your account for rate limiting and usage tracking
+
+### Request Your API Key
+
+To get your API key, you have two options:
+
+1. **Schedule a Meeting**: [Book a 30-minute call](https://calendly.com/omnes-blockchain/30min?month=2025-11) with our team
+2. **Send an Email**: [Contact us](mailto:gus@omnes.dev) to request access
+
+Once approved, you'll receive your API key via email. Store it securely and never commit it to version control.
+
+### Using Your API Key
+
+The API key is sent in the `X-API-Key` header for all API requests:
+
+```typescript
+// REST API Request
+fetch('https://api.msa.omnes.tech/getbundleraddress', {
+  headers: {
+    'X-API-Key': 'your-api-key-here',
+    'Content-Type': 'application/json'
+  }
+});
+```
+
+When using the SmartWallet SDK, pass the API key during initialization:
+
+```typescript
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  'your-api-key-here', // API Key here
+  null,
+  false
+);
+```
+
+### Environment Variables
+
+Store your API key securely using environment variables:
+
+```bash
+# .env file
+API_KEY=your-api-key-here
+PRIVATE_KEY=0x...
+RPC_URL=https://rpc-amoy.polygon.technology/
+```
+
+```typescript
+// In your code
+const apiKey = process.env.API_KEY!;
+const rpcURL = process.env.RPC_URL!;
+const privateKey = process.env.PRIVATE_KEY!;
+```
 
 ## Signing Providers
 
@@ -13,6 +84,8 @@ MSA API currently supports:
 
 - **Fireblocks HSM**: Hardware Security Module integration
 - **Fireblocks MPC**: Multi-Party Computation signing
+- **Private Key Signing**: Direct private key signing (for testing)
+- **Google Cloud KMS**: GCP HSM signing
 - More providers coming soon
 
 ## Fireblocks Integration

@@ -1,0 +1,162 @@
+---
+title: Gas Estimation
+description: Estimate and optimize transaction gas costs for MSA wallet operations.
+---
+
+# Gas Estimation
+
+Estimate gas costs for transactions before execution to optimize costs and ensure sufficient funds.
+
+## Overview
+
+Gas estimation helps you:
+- Predict transaction costs
+- Optimize gas usage
+- Ensure wallet has sufficient funds
+- Set appropriate gas prices
+
+## Basic Gas Estimation
+
+<Tabs items={["TypeScript", "Python", "cURL"]}>
+<Tab value="TypeScript">
+
+```typescript
+import { MSAClient, CustodyType } from '@omnes/msa-sdk';
+
+const client = new MSAClient({
+  baseURL: 'https://api.msa.omnes.tech',
+  defaultSettings: {
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+    entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618'
+  }
+});
+
+// Estimate gas for operation
+const gasEstimate = await client.estimateGas({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com',
+  to: '0x097d4Aed5924e2172451973153Fc0e03407eD1F9',
+  funcSignature: 'transfer(address,uint256)',
+  funcParams: ['0xRecipient...', '1000000']
+});
+
+console.log('Estimated gas limit:', gasEstimate.gasLimit);
+console.log('Gas price:', gasEstimate.gasPrice);
+console.log('Total cost:', gasEstimate.totalCost);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+def estimate_gas():
+    url = "https://api.msa.omnes.tech/estimateGas"
+    
+    payload = {
+        "operations": [{
+            "walletCustody": 1,
+            "salt": "user@example.com",
+            "to": "0x097d4Aed5924e2172451973153Fc0e03407eD1F9",
+            "funcSignature": "transfer(address,uint256)",
+            "funcParams": ["0xRecipient...", "1000000"]
+        }],
+        "settings": {
+            "rpc": "https://rpc-amoy.polygon.technology/",
+            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
+        }
+    }
+    
+    response = requests.post(url, json=payload)
+    return response.json()
+
+estimate_gas()
+```
+
+</Tab>
+<Tab value="cURL">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/estimateGas" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operations": [{
+      "walletCustody": 1,
+      "salt": "user@example.com",
+      "to": "0x097d4Aed5924e2172451973153Fc0e03407eD1F9",
+      "funcSignature": "transfer(address,uint256)",
+      "funcParams": ["0xRecipient...", "1000000"]
+    }],
+    "settings": { ... }
+  }'
+```
+
+</Tab>
+</Tabs>
+
+## Using SmartWallet SDK
+
+```typescript
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const smartWallet = await SmartWallet.create(...);
+
+// Estimate gas
+const { gasLimit, gasPrice } = await smartWallet.estimateGas(
+  target,
+  value,
+  funcSignature,
+  funcArgs,
+  gasPrice || null,
+  accessList
+);
+
+console.log('Gas limit:', gasLimit);
+console.log('Gas price:', gasPrice);
+console.log('Total:', gasLimit * gasPrice);
+```
+
+## Gas Configuration
+
+Configure gas overshoot for reliability:
+
+```typescript
+const client = new MSAClient({
+  baseURL: 'https://api.msa.omnes.tech',
+  defaultSettings: {
+    // ... other settings
+    percentUserOpGasOvershoot: 80,  // 80% buffer
+    percentTxGasOvershoot: 30,       // 30% buffer
+    percentTxGasPriceOvershoot: 25  // 25% buffer
+  }
+});
+```
+
+## Optimization Tips
+
+1. **Batch Operations**: Group operations to save gas
+2. **Optimize Call Data**: Minimize function parameters
+3. **Use Paymaster**: Sponsor gas with ERC-20 tokens
+4. **Monitor Gas Prices**: Execute during low gas periods
+5. **Estimate First**: Always estimate before execution
+
+## Next Steps
+
+- **[Basic Execution](/docs/transaction-execution/basic-execution)** - Execute transactions
+- **[Advanced Features](/docs/advanced/troubleshooting)** - Troubleshoot gas issues
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <p className="text-blue-800">
+    <strong>💡 Save Gas:</strong> Batch operations and use gas estimation to optimize transaction costs.
+  </p>
+</div>
+

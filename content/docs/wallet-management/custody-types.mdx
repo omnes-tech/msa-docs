@@ -1,0 +1,351 @@
+---
+title: Wallet Custody Types
+description: Understand the different wallet custody configurations available in the MSA API and when to use each type.
+---
+
+# Wallet Custody Types
+
+The MSA API supports five different wallet custody configurations, each designed for specific use cases and security requirements. Choose the right custody type based on your application's needs.
+
+## Overview
+
+Wallet custody determines how transactions are validated and signed. Each custody type offers different levels of security, convenience, and complexity.
+
+| Type | ID | Description | Use Cases |
+|------|----|----|-----------|
+| **ECDSA_VALIDATOR** | 1 | Traditional ECDSA signature validation | Standard wallets, simple use cases |
+| **ECDSA_PASSKEY_VALIDATOR** | 2 | Hybrid ECDSA + Passkey validation | Enhanced security with biometrics |
+| **PASSKEY_VALIDATOR** | 3 | Pure passkey-based validation | Passwordless, Web2-like experience |
+| **MULTISIG_VALIDATOR** | 4 | Traditional multi-signature setup | Shared custody, organizations |
+| **MULTISIG_PASSKEY_VALIDATOR** | 5 | Multi-sig with passkey support | Enterprise-grade security |
+
+## ECDSA Validator (Type 1)
+
+**The standard choice for most applications.**
+
+### Features
+
+- ✅ Simple ECDSA signature validation
+- ✅ Single private key control
+- ✅ Compatible with all wallets and tools
+- ✅ Lowest gas costs
+- ✅ Fast transaction execution
+
+### When to Use
+
+- Standard wallet applications
+- Simple use cases without special security requirements
+- Applications requiring compatibility with existing infrastructure
+- Cost-sensitive applications
+
+### Example
+
+```typescript
+const wallet = await client.createWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com'
+});
+```
+
+### Configuration
+
+No additional parameters required. Just provide the salt.
+
+## ECDSA + Passkey Validator (Type 2)
+
+**Best of both worlds: ECDSA backup with passkey convenience.**
+
+### Features
+
+- ✅ Supports both ECDSA signatures and passkey authentication
+- ✅ Biometric authentication (face ID, fingerprint, etc.)
+- ✅ Fallback to ECDSA if passkey unavailable
+- ✅ Enhanced security with two-factor validation
+- ⚠️ Slightly higher gas costs
+
+### When to Use
+
+- Consumer applications wanting enhanced security
+- Applications needing biometric authentication
+- Mobile-first experiences
+- Apps requiring both convenience and security
+
+### Requirements
+
+- Passkey public key (base64URL encoded, DER format)
+- P-256 curve (ES256)
+- UP and UV flags enabled during passkey registration
+
+### Example
+
+```typescript
+const wallet = await client.createWallet({
+  walletCustody: CustodyType.ECDSA_PASSKEY_VALIDATOR,
+  salt: 'user@example.com',
+  passkeyPubKey: ['base64-url-encoded-public-key'] // Required
+});
+```
+
+### Passkey Registration
+
+```typescript
+const publicKeyOptions = {
+  pubKeyCredParams: [{
+    type: "public-key" as const,
+    alg: -7, // ES256 (P-256 curve)
+  }],
+  attestation: "direct" as AttestationConveyancePreference,
+  authenticatorSelection: {
+    authenticatorAttachment: "platform" as AuthenticatorAttachment,
+    residentKey: "required" as ResidentKeyRequirement,
+    requireResidentKey: true,
+    userVerification: "required" as UserVerificationRequirement, // UV flag
+  }
+};
+
+const credential = await navigator.credentials.create({
+  publicKey: publicKeyOptions
+});
+
+// Extract and store public key (keep in base64URL DER format)
+const publicKey = /* extract from credential */;
+```
+
+## Passkey Validator (Type 3)
+
+**Pure passwordless experience - no private keys to manage.**
+
+### Features
+
+- ✅ Pure passkey-based validation
+- ✅ No private keys to manage
+- ✅ Biometric authentication only
+- ✅ Web2-like user experience
+- ✅ Maximum convenience
+- ⚠️ No fallback if passkey lost
+
+### When to Use
+
+- Consumer applications prioritizing UX
+- Applications targeting non-crypto users
+- Mobile-first experiences
+- Apps wanting passwordless authentication
+
+### Requirements
+
+- Passkey public key (base64URL encoded, DER format)
+- P-256 curve (ES256)
+- UP and UV flags enabled
+
+### Example
+
+```typescript
+const wallet = await client.createWallet({
+  walletCustody: CustodyType.PASSKEY_VALIDATOR,
+  salt: 'user@example.com',
+  passkeyPubKey: ['base64-url-encoded-public-key'] // Required
+});
+```
+
+### Security Considerations
+
+- ⚠️ No fallback if passkey is lost
+- ⚠️ Requires device with biometric authentication
+- ⚠️ Users must have backup passkeys
+- ✅ Consider multi-device passkey registration
+
+## Multisig Validator (Type 4)
+
+**Shared control between multiple parties.**
+
+### Features
+
+- ✅ M-of-N signature requirements
+- ✅ Shared custody control
+- ✅ Threshold-based validation
+- ✅ Suitable for organizations
+- ✅ Enhanced security through distribution
+- ⚠️ More complex to manage
+- ⚠️ Higher gas costs
+
+### When to Use
+
+- Organizational wallets
+- Shared control scenarios
+- High-value transaction requirements
+- Compliance and governance needs
+- Treasury management
+
+### Requirements
+
+- Array of signer addresses
+- Threshold value (M-of-N)
+- At least 2 signers
+
+### Example
+
+```typescript
+const wallet = await client.createWallet({
+  walletCustody: CustodyType.MULTISIG_VALIDATOR,
+  salt: 'org@example.com',
+  signers: [
+    '0x742d35Cc6676C461fAb7E06dcA6e1A1BB2b7d0Fd', // Signer 1
+    '0x8ba1f109551bD432803012645Hac136c0bf1E1A5', // Signer 2
+    '0x9D86b1BEE4F24C5F5e4B15c2C3d2F0f6Ff2F5f5E'  // Signer 3
+  ],
+  threshold: '2' // Require 2 of 3 signatures
+});
+```
+
+### Threshold Configuration
+
+The `threshold` determines how many signatures are required:
+
+- **1-of-N**: Any signer can approve (less secure)
+- **M-of-N**: M signatures required (balanced)
+- **N-of-N**: All signers must approve (most secure, least flexible)
+
+**Example Thresholds:**
+
+```typescript
+// 2-of-3 (Recommended for most cases)
+threshold: '2'
+
+// 3-of-5 (Higher security)
+threshold: '3'
+
+// All signatures required (Maximum security)
+threshold: '5' // For 5 signers
+```
+
+## Multisig + Passkey Validator (Type 5)
+
+**Enterprise-grade security combining multisig with passkeys.**
+
+### Features
+
+- ✅ M-of-N signature requirements (signers + passkeys)
+- ✅ Passkey support for convenience
+- ✅ Maximum security and flexibility
+- ✅ Shared control with biometric auth
+- ⚠️ Most complex configuration
+- ⚠️ Highest gas costs
+
+### When to Use
+
+- Enterprise applications
+- High-security requirements
+- Organizations needing both convenience and security
+- Regulated industries
+- Critical financial operations
+
+### Requirements
+
+- Array of signer addresses
+- Array of passkey public keys
+- Threshold value (M of total signers + passkeys)
+
+### Example
+
+```typescript
+const wallet = await client.createWallet({
+  walletCustody: CustodyType.MULTISIG_PASSKEY_VALIDATOR,
+  salt: 'enterprise@example.com',
+  signers: [
+    '0x742d35Cc6676C461fAb7E06dcA6e1A1BB2b7d0Fd', // ECDSA signer 1
+    '0x8ba1f109551bD432803012645Hac136c0bf1E1A5'  // ECDSA signer 2
+  ],
+  passkeyPubKey: [
+    'base64-url-key-1', // Passkey 1
+    'base64-url-key-2'  // Passkey 2
+  ],
+  threshold: '2' // Require 2 total (could be 1 signer + 1 passkey)
+});
+```
+
+### Threshold Examples
+
+```typescript
+// 2-of-4 (2 signers + 2 passkeys)
+// Could be: 2 signers, or 1 signer + 1 passkey, or 2 passkeys
+threshold: '2'
+
+// 3-of-5 (2 signers + 3 passkeys)
+threshold: '3'
+
+// 4-of-6 (3 signers + 3 passkeys)
+// High security, requires majority
+threshold: '4'
+```
+
+## Choosing the Right Custody Type
+
+### Decision Matrix
+
+| Criteria | ECDSA | ECDSA+Passkey | Passkey | Multisig | Multisig+Passkey |
+|----------|-------|---------------|---------|----------|------------------|
+| **Simplicity** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ | ⭐ |
+| **Security** | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Convenience** | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
+| **Cost** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
+| **Use Case** | Standard | Enhanced | Consumer | Org | Enterprise |
+
+### Selection Guide
+
+**Choose ECDSA Validator (Type 1) if:**
+- Building standard wallet applications
+- Need simplicity and low costs
+- Don't require special security features
+
+**Choose ECDSA + Passkey (Type 2) if:**
+- Want biometric authentication
+- Need backup ECDSA option
+- Building consumer mobile apps
+
+**Choose Passkey Validator (Type 3) if:**
+- Prioritizing user experience
+- Targeting non-crypto users
+- Want pure passwordless experience
+
+**Choose Multisig Validator (Type 4) if:**
+- Building organizational wallets
+- Need shared control
+- Require governance/approval workflows
+
+**Choose Multisig + Passkey (Type 5) if:**
+- Enterprise applications
+- Need maximum security
+- Want both convenience and control
+
+## Migration Between Custody Types
+
+**Important**: You cannot change custody type for an existing wallet. Each salt produces one address with one custody type.
+
+To "migrate":
+1. Create new wallet with desired custody type
+2. Transfer funds from old wallet
+3. Update application to use new wallet
+
+## Best Practices
+
+1. **Choose Early**: Decide custody type before wallet creation
+2. **Consider Costs**: Higher custody types cost more gas
+3. **Plan for Growth**: Consider future needs
+4. **Document Choices**: Record why you chose each type
+5. **Test Thoroughly**: Test all custody types in development
+
+## Next Steps
+
+- **[Creating Wallets](/docs/wallet-management/creating-wallets)** - Deploy wallets with your chosen custody type
+- **[Predicting Addresses](/docs/wallet-management/predicting-addresses)** - Calculate addresses for different custody types
+- **[Advanced Features](/docs/advanced/passkeys)** - Learn about passkey implementation
+- **[Advanced Features](/docs/advanced/multisig)** - Deep dive into multisig wallets
+
+---
+
+<div className="mt-8 p-4 bg-purple-50 rounded-lg">
+  <p className="text-purple-800">
+    <strong>💡 Need Help Choosing?</strong> Contact our team for guidance on selecting the right custody type for your application. We can help you evaluate your security requirements and recommend the best configuration.
+  </p>
+</div>
+

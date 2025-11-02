@@ -71,14 +71,42 @@ The MSA API provides the following main endpoint categories:
 - **Contract Interaction**: Read contract state and decode events
 - **Utilities**: Message signing, receipt fetching, and troubleshooting
 
-## Next Steps
+## Documentation Sections
 
-<div className="mt-8 space-y-4">
-  <a href="/docs/getting-started/introduction" className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-    <h3 className="font-semibold">📚 Learn the Concepts</h3>
-    <p className="text-gray-600">Understand Account Abstraction and wallet custody types</p>
-  </a>
-  
+### Getting Started
+- **[Introduction](/docs/getting-started/introduction)** - Learn Account Abstraction concepts
+- **[Authentication](/docs/getting-started/authentication)** - Configure HSM/MPC credentials
+- **[Quick Start](/docs/getting-started/quick-start)** - Create your first wallet in 5 minutes
+
+### Wallet Management
+- **[Creating Wallets](/docs/wallet-management/creating-wallets)** - Deploy smart contract wallets
+- **[Predicting Addresses](/docs/wallet-management/predicting-addresses)** - Calculate wallet addresses
+- **[Checking Wallets](/docs/wallet-management/checking-wallets)** - Verify wallet existence
+- **[Custody Types](/docs/wallet-management/custody-types)** - Understand all custody configurations
+
+### Transaction Execution
+- **[Basic Execution](/docs/transaction-execution/basic-execution)** - Execute standard transactions
+- **[Encoded Execution](/docs/transaction-execution/encoded-execution)** - Execute pre-encoded UserOperations
+- **[Passkey Execution](/docs/transaction-execution/passkey-execution)** - Sign with passkeys
+- **[Gas Estimation](/docs/transaction-execution/gas-estimation)** - Optimize transaction costs
+
+### SDK & Integration
+- **[TypeScript SDK](/docs/sdk/typescript-sdk)** - Type-safe SDK with full features
+- **[JavaScript Examples](/docs/sdk/javascript-examples)** - Native browser examples
+- **[Python Examples](/docs/sdk/python-examples)** - Python integration examples
+- **[cURL Examples](/docs/sdk/curl-examples)** - Command-line testing
+
+### Advanced Features
+- **[Multi-Signature Wallets](/docs/advanced/multisig)** - Complete multisig guide
+- **[Passkey Authentication](/docs/advanced/passkeys)** - Passkey integration guide
+- **[Troubleshooting](/docs/advanced/troubleshooting)** - Common issues and solutions
+
+### API Reference
+- **[Interactive API Docs](/docs/api-reference/interactive-docs)** - Try endpoints in your browser
+
+## Quick Links
+
+<div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
   <a href="/docs/getting-started/quick-start" className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors">
     <h3 className="font-semibold">⚡ Quick Start Guide</h3>
     <p className="text-gray-600">Create your first wallet in 5 minutes</p>
@@ -91,14 +119,78 @@ The MSA API provides the following main endpoint categories:
   
   <a href="/docs/sdk/typescript-sdk" className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors">
     <h3 className="font-semibold">📦 TypeScript SDK</h3>
-    <p className="text-gray-600">Integrate MSA API with type-safe TypeScript code</p>
+    <p className="text-gray-600">Integrate with type-safe TypeScript code</p>
+  </a>
+  
+  <a href="/docs/wallet-management/custody-types" className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+    <h3 className="font-semibold">🔐 Custody Types</h3>
+    <p className="text-gray-600">Choose the right wallet configuration</p>
   </a>
 </div>
 
 ---
 
-<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+## Technology Stack
+
+MSA API is built with modern technologies:
+
+- **Backend**: Go-based API service
+- **Signing**: Fireblocks HSM/MPC integration
+- **Smart Contracts**: ERC-4337 Account Abstraction
+- **SDKs**: TypeScript/JavaScript, Python (coming soon)
+- **Networks**: Polygon, Base, Ethereum (all EVM-compatible chains)
+
+## Resources
+
+- **API Base URL**: `https://api.msa.omnes.tech`
+- **Official Website**: [omnes.dev](https://omnes.dev/)
+- **Documentation**: This site
+- **SDK Repository**: [GitHub](https://github.com/omnes/smartwallet-sdks)
+- **Examples**: [GitHub Examples](https://github.com/omnes/sdk-examples)
+- **Support**: [Discord Community](https://discord.gg/omnes)
+
+---
+
+<div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+  <div className="text-center">
+    <p className="text-blue-900 mb-4">
+      <strong>🚀 Ready to Build?</strong> Start with our <a href="/docs/getting-started/quick-start" className="font-semibold underline">Quick Start Guide</a> or explore the <a href="/docs/api-reference/interactive-docs" className="font-semibold underline">Interactive API Reference</a> to try endpoints directly in your browser.
+    </p>
+    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      <a
+        href="https://calendly.com/omnes-blockchain/30min?month=2025-11"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold text-center"
+      >
+        📅 Contact Us - Request Access
+      </a>
+      <a
+        href="mailto:gus@omnes.dev"
+        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-center"
+      >
+        📧 Send Email
+      </a>
+    </div>
+    <p className="text-sm text-blue-700 mt-4">
+      Need a private key to get started? Contact us to request access and begin using the MSA API.
+    </p>
+  </div>
+</div>
+
+<div className="mt-4 p-4 bg-blue-50 rounded-lg">
   <p className="text-blue-800">
-    <strong>Need Help?</strong> Join our community or check out the troubleshooting guide for common issues.
+    <strong>Need Help?</strong> Join our <a href="https://discord.gg/omnes" className="font-semibold underline">Discord community</a> or check out the <a href="/docs/advanced/troubleshooting" className="font-semibold underline">troubleshooting guide</a> for common issues.
   </p>
+</div>
+
+<div className="mt-6 p-4 border-t border-gray-200">
+  <div className="text-center text-sm text-gray-600 space-y-2">
+    <p>
+      <strong>Visit our website:</strong> <a href="https://omnes.dev/" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:text-blue-800 underline">omnes.dev</a>
+    </p>
+    <p className="text-gray-500">
+      Built with ❤️ by the Omnes Team | Making Account Abstraction accessible to developers worldwide
+    </p>
+  </div>
 </div> 

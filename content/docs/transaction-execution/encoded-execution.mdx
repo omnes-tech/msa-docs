@@ -1,0 +1,309 @@
+---
+title: Encoded Transaction Execution
+description: Execute pre-encoded UserOperations with the MSA API for advanced transaction control.
+---
+
+# Encoded Transaction Execution
+
+Execute pre-encoded UserOperations for advanced control over transaction execution. This is useful for custom transaction encoding, passkey signatures, and manual UserOp construction.
+
+## Overview
+
+The encoded execution endpoint allows you to provide pre-encoded UserOperations with signatures. This gives you full control over the UserOperation structure and is essential for:
+
+- Passkey-based transactions
+- Custom signature schemes
+- Pre-encoded transaction batching
+- Advanced gas optimization
+
+## Basic Encoded Execution
+
+<Tabs items={["TypeScript", "Python", "cURL"]}>
+<Tab value="TypeScript">
+
+```typescript
+import { MSAClient } from '@omnes/msa-sdk';
+
+const client = new MSAClient({
+  baseURL: 'https://api.msa.omnes.tech',
+  defaultSettings: {
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    signer: {
+      clientId: process.env.MSA_CLIENT_ID!,
+      versionId: process.env.MSA_VERSION_ID!
+    }
+  }
+});
+
+// Execute pre-encoded UserOperation
+const result = await client.executeEncoded({
+  encodedUserOp: '0x0000000000000000000000000000000000000000...',
+  userOpHash: '0x3cf5cc53a628b6c0526ede4ab8fa72c217cf3789...',
+  walletCustody: CustodyType.ECDSA_VALIDATOR
+});
+
+console.log('Transaction hash:', result.txHash);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+def execute_encoded():
+    url = "https://api.msa.omnes.tech/executeEncoded"
+    
+    payload = {
+        "encodedUserOp": "0x0000000000000000000000000000000000000000...",
+        "userOpHash": "0x3cf5cc53a628b6c0526ede4ab8fa72c217cf3789...",
+        "walletCustody": 1
+    }
+    
+    response = requests.post(url, json=payload)
+    return response.json()
+
+execute_encoded()
+```
+
+</Tab>
+<Tab value="cURL">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/executeEncoded" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "encodedUserOp": "0x0000000000000000000000000000000000000000...",
+    "userOpHash": "0x3cf5cc53a628b6c0526ede4ab8fa72c217cf3789...",
+    "walletCustody": 1
+  }'
+```
+
+</Tab>
+</Tabs>
+
+## Building UserOperations with SmartWallet SDK
+
+Use the SmartWallet SDK to build UserOperations:
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+import { toBytes, toHex } from 'viem';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  null, // Don't auto-sign UserOp hash
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey
+);
+
+// Build operations
+const operations: Operation = {
+  to: tokenAddress,
+  value: BigInt(0),
+  funcSignature: 'transfer(address,uint256)',
+  params: [recipient, amount]
+};
+
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1,
+    salt: 'user@example.com',
+    publicKeys: []
+  },
+  operations: [operations],
+  settings: {}
+}];
+
+// Build UserOperations (not signed yet)
+const result = await smartWallet.buildUserOperations(
+  accountOperations,
+  [],
+  []
+);
+
+// Sign UserOp hashes manually
+const signatures: `0x${string}`[] = [];
+for (const userOp of result.userOps) {
+  const signature = await signer.signMessage(toBytes(userOp.userOpHash));
+  signatures.push(toHex(signature) as `0x${string}`);
+}
+
+// Execute with signatures
+const response = await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  result.userOps,
+  result.accessList,
+  signatures,
+  [] // Operation settings
+);
+```
+
+## Passkey Execution Flow
+
+For passkey-based execution, you need to:
+
+1. Build UserOperations
+2. Extract UserOp hashes
+3. Sign with passkey (frontend)
+4. Encode passkey signatures
+5. Execute with encoded signatures
+
+```typescript
+// 1. Build UserOperations
+const result = await smartWallet.buildUserOperations(accountOperations, [], []);
+
+// 2. Extract UserOp hashes
+const userOpHashes = result.userOps.map(op => op.userOpHash);
+
+// 3. Sign with passkey (frontend - see passkey-execution.mdx)
+const passkeySignatures = await signWithPasskey(userOpHashes);
+
+// 4. Encode passkey signatures
+import { encodeAbiParameters } from 'viem';
+
+const encodedSignatures = passkeySignatures.map(sig => {
+  return encodeAbiParameters(
+    [{
+      type: 'tuple', components: [
+        { type: 'bytes' },      // authenticatorData
+        { type: 'string' },     // clientDataJSON
+        { type: 'uint256' },    // challenge (23)
+        { type: 'uint256' },    // type (1)
+        { type: 'uint256' },    // r
+        { type: 'uint256' }     // s
+      ]
+    }],
+    [[
+      sig.authenticatorData,
+      sig.clientDataJSON,
+      BigInt(23),
+      BigInt(1),
+      BigInt(sig.r),
+      BigInt(sig.s)
+    ]]
+  );
+});
+
+// 5. Execute
+const response = await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  result.userOps,
+  result.accessList,
+  encodedSignatures
+);
+```
+
+## UserOperation Structure
+
+A PackedUserOperation contains:
+
+```typescript
+interface PackedUserOperation {
+  sender: Address;              // Wallet address
+  nonce: bigint;               // Nonce
+  initCode: `0x${string}`;      // Initialization code
+  callData: `0x${string}`;     // Function call data
+  accountGasLimits: `0x${string}`; // Gas limits
+  preVerificationGas: bigint;  // Pre-verification gas
+  gasFees: `0x${string}`;      // Gas fees
+  paymasterAndData: `0x${string}`; // Paymaster data
+  signature: `0x${string}`;     // Signature
+  userOpHash: `0x${string}`;   // UserOp hash
+  dependsOn: number;           // Dependency index
+}
+```
+
+## Response Format
+
+Same as basic execution:
+
+```typescript
+interface ExecutionResult {
+  status: number;
+  txHash: string;
+  gasUsed: number;
+  effectiveGasPrice: string;
+  logs: any[];
+  errors: any[];
+  returnData: any[];
+}
+```
+
+## Use Cases
+
+### 1. Custom Signature Schemes
+
+```typescript
+// Build UserOp
+const result = await smartWallet.buildUserOperations(accountOperations, [], []);
+
+// Apply custom signature logic
+const customSignatures = result.userOps.map(userOp => {
+  // Your custom signing logic
+  return customSign(userOp.userOpHash);
+});
+
+// Execute with custom signatures
+await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  result.userOps,
+  result.accessList,
+  customSignatures
+);
+```
+
+### 2. Pre-encoding for Batch Operations
+
+```typescript
+// Build multiple UserOps
+const userOps = await Promise.all(
+  accounts.map(account => 
+    smartWallet.buildUserOperations([{
+      account: { ...account },
+      operations: [operation],
+      settings: {}
+    }], [], [])
+  )
+);
+
+// Encode all UserOps
+const encodedUserOps = userOps.map(result => encodeUserOp(result.userOps[0]));
+
+// Execute all at once
+await executeBatch(encodedUserOps);
+```
+
+### 3. Gas Optimization
+
+```typescript
+// Build UserOp
+const result = await smartWallet.buildUserOperations(accountOperations, [], []);
+
+// Analyze and optimize gas
+const optimizedUserOps = optimizeGas(result.userOps);
+
+// Sign optimized UserOps
+const signatures = await signUserOps(optimizedUserOps);
+
+// Execute optimized
+await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  optimizedUserOps,
+  result.accessList,
+  signatures
+);
+```
+
+## Next Steps
+
+- **[Passkey Execution](/docs/transaction-execution/passkey-execution)** - Detailed passkey execution guide
+- **[Gas Estimation](/docs/transaction-execution/gas-estimation)** - Optimize transaction costs
+- **[Basic Execution](/docs/transaction-execution/basic-execution)** - Standard execution patterns
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <p className="text-blue-800">
+    <strong>💡 Advanced Control:</strong> Encoded execution gives you full control over UserOperations. Use it for custom signature schemes, passkey integration, and advanced optimization.
+  </p>
+</div>
+

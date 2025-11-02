@@ -1,0 +1,433 @@
+---
+title: Predicting Wallet Addresses
+description: Predict wallet addresses before deployment using the MSA API's deterministic address generation.
+---
+
+# Predicting Wallet Addresses
+
+The MSA API allows you to predict wallet addresses before they're deployed. This is essential for funding wallets before creation and ensuring deterministic address generation.
+
+## Overview
+
+MSA uses **CREATE3** for deterministic address generation. Given a `salt` value, you can always calculate the exact wallet address that will be created, regardless of when or where the wallet is deployed.
+
+## How Address Prediction Works
+
+The prediction algorithm:
+
+1. **Takes your salt** - Any string identifier
+2. **Hashes the salt** - Creates a unique hash
+3. **Combines with factory and bytecode** - Uses CREATE3 pattern
+4. **Returns deterministic address** - Same salt = same address
+
+```typescript
+// Same salt always produces same address
+const address1 = await client.predictWallet({ salt: 'user@example.com' });
+const address2 = await client.predictWallet({ salt: 'user@example.com' });
+
+console.log(address1.wallet === address2.wallet); // true
+```
+
+## Basic Prediction
+
+### Single Address Prediction
+
+<Tabs items={["TypeScript", "Python", "cURL"]}>
+<Tab value="TypeScript">
+
+```typescript
+import { MSAClient, CustodyType } from '@omnes/msa-sdk';
+
+const client = new MSAClient({
+  baseURL: 'https://api.msa.omnes.tech',
+  defaultSettings: {
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+    entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618'
+  }
+});
+
+// Predict wallet address
+const prediction = await client.predictWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com'
+});
+
+console.log('Predicted address:', prediction.wallet);
+console.log('Salt:', prediction.salt);
+console.log('Custody type:', prediction.walletCustody);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+def predict_wallet():
+    url = "https://api.msa.omnes.tech/predict"
+    
+    payload = {
+        "accounts": [{
+            "walletCustody": 1,  # ECDSA_VALIDATOR
+            "salt": "user@example.com"
+        }],
+        "settings": {
+            "rpc": "https://rpc-amoy.polygon.technology/",
+            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
+        }
+    }
+    
+    response = requests.post(url, json=payload)
+    result = response.json()
+    
+    wallet_address = result['predictions'][0]['wallet']
+    print(f'Predicted wallet address: {wallet_address}')
+    return wallet_address
+
+predict_wallet()
+```
+
+</Tab>
+<Tab value="cURL">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/predict" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [{
+      "walletCustody": 1,
+      "salt": "user@example.com"
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
+    }
+  }'
+```
+
+</Tab>
+</Tabs>
+
+**Expected Response:**
+
+```json
+{
+  "predictions": [{
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "salt": "user@example.com",
+    "walletCustody": 1
+  }]
+}
+```
+
+## Batch Prediction
+
+Predict multiple addresses at once:
+
+```typescript
+const predictions = await client.predictWallets([
+  { 
+    walletCustody: CustodyType.ECDSA_VALIDATOR, 
+    salt: 'user1@example.com' 
+  },
+  { 
+    walletCustody: CustodyType.PASSKEY_VALIDATOR, 
+    salt: 'user2@example.com',
+    passkeyPubKey: ['base64-key']
+  },
+  { 
+    walletCustody: CustodyType.MULTISIG_VALIDATOR, 
+    salt: 'org@example.com',
+    signers: ['0x...', '0x...'],
+    threshold: '2'
+  }
+]);
+
+predictions.forEach((pred, i) => {
+  console.log(`Wallet ${i + 1}:`, pred.wallet);
+});
+```
+
+## Complete Workflow: Predict → Fund → Create
+
+```typescript
+async function createWalletWithFunding() {
+  const salt = 'user@example.com';
+  
+  // 1. Predict wallet address
+  console.log('🔮 Predicting wallet address...');
+  const prediction = await client.predictWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt
+  });
+  
+  const walletAddress = prediction.wallet;
+  console.log(`✅ Predicted address: ${walletAddress}`);
+  
+  // 2. Fund the wallet (using your preferred method)
+  console.log('💰 Funding wallet...');
+  // Example: Send 0.1 MATIC to predicted address
+  // await sendTokens(walletAddress, '0.1');
+  // Or use a faucet on testnet
+  
+  // 3. Create the wallet
+  console.log('🏗️ Creating wallet...');
+  const result = await client.createWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt
+  });
+  
+  console.log(`✅ Wallet created! Tx: ${result.txHash}`);
+  console.log(`✅ Wallet address: ${walletAddress}`);
+  console.log(`✅ Address matches: ${result.wallet === walletAddress}`);
+  
+  return { walletAddress, txHash: result.txHash };
+}
+```
+
+## Using SmartWallet SDK
+
+With the SmartWallet SDK, you can predict addresses locally:
+
+```typescript
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey
+);
+
+// Predict address using SDK method
+const salt = 'user@example.com';
+const predictedAddress = smartWallet.predictWalletAddress(salt);
+console.log('Predicted address:', predictedAddress);
+```
+
+## Salt Guidelines
+
+### Best Practices
+
+1. **Use Unique Identifiers**
+   ```typescript
+   // Good
+   salt: `user-${userId}`
+   salt: `org-${organizationId}-wallet-1`
+   salt: `${domain}-${userEmail}`
+   
+   // Avoid
+   salt: 'wallet'  // Too generic
+   salt: '1'      // Too simple
+   ```
+
+2. **Make It Meaningful**
+   ```typescript
+   // Good - Easy to identify
+   salt: `user-${userId}-main-wallet`
+   salt: `${serviceName}-${userId}`
+   
+   // Good - Versioned
+   salt: `${userId}-v1`
+   salt: `${userId}-v2`
+   ```
+
+3. **Keep It Consistent**
+   ```typescript
+   // Use same salt format across your application
+   const generateSalt = (userId: string) => {
+     return `user-${userId}-wallet`;
+   };
+   ```
+
+### Salt Examples
+
+```typescript
+// User ID-based
+salt: 'user-12345'
+
+// Email-based
+salt: 'user@example.com'
+
+// UUID-based
+salt: '550e8400-e29b-41d4-a716-446655440000'
+
+// Composite
+salt: 'org-456-user-123-main'
+
+// Versioned
+salt: 'user-123-v1'
+salt: 'user-123-v2'
+```
+
+## Custody Type Considerations
+
+Different custody types may require additional parameters:
+
+### Passkey Wallets
+
+```typescript
+const prediction = await client.predictWallet({
+  walletCustody: CustodyType.PASSKEY_VALIDATOR,
+  salt: 'passkey-user@example.com',
+  passkeyPubKey: ['base64-url-encoded-public-key'] // Required
+});
+```
+
+### Multisig Wallets
+
+```typescript
+const prediction = await client.predictWallet({
+  walletCustody: CustodyType.MULTISIG_VALIDATOR,
+  salt: 'multisig-org@example.com',
+  signers: ['0x...', '0x...', '0x...'],
+  threshold: '2'
+});
+```
+
+## Verification
+
+After creating a wallet, verify the address matches:
+
+```typescript
+// Before creation
+const prediction = await client.predictWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com'
+});
+
+// After creation
+const createResult = await client.createWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com'
+});
+
+// Verify match
+const addressesMatch = prediction.wallet.toLowerCase() === 
+                      createResult.wallet.toLowerCase();
+
+console.log('Addresses match:', addressesMatch); // Should be true
+```
+
+## Use Cases
+
+### 1. Pre-funding Wallets
+
+```typescript
+// Predict address
+const prediction = await client.predictWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com'
+});
+
+// Fund before creation
+await fundWallet(prediction.wallet, '0.1');
+
+// Create wallet (now has funds)
+await client.createWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com'
+});
+```
+
+### 2. Wallet Lookup
+
+```typescript
+// User provides email
+const userEmail = 'user@example.com';
+
+// Predict their wallet address
+const prediction = await client.predictWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: userEmail
+});
+
+// Check if wallet exists
+const check = await client.checkWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: userEmail
+});
+
+if (check.exists) {
+  console.log('User wallet:', check.wallet);
+} else {
+  console.log('User wallet not created yet');
+}
+```
+
+### 3. Batch Wallet Preparation
+
+```typescript
+// Predict addresses for multiple users
+const users = ['user1@example.com', 'user2@example.com', 'user3@example.com'];
+
+const predictions = await Promise.all(
+  users.map(email => 
+    client.predictWallet({
+      walletCustody: CustodyType.ECDSA_VALIDATOR,
+      salt: email
+    })
+  )
+);
+
+// Fund all wallets
+await Promise.all(
+  predictions.map(pred => fundWallet(pred.wallet, '0.1'))
+);
+
+// Create all wallets
+await client.createWallets(
+  users.map(email => ({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: email
+  }))
+);
+```
+
+## Error Handling
+
+```typescript
+try {
+  const prediction = await client.predictWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user@example.com'
+  });
+  
+  console.log('Prediction successful:', prediction.wallet);
+} catch (error) {
+  if (error.message.includes('Invalid settings')) {
+    console.error('Check your factory and validator addresses');
+  } else if (error.message.includes('network')) {
+    console.error('Network connection failed');
+  } else {
+    console.error('Prediction failed:', error.message);
+  }
+}
+```
+
+## Next Steps
+
+- **[Creating Wallets](/docs/wallet-management/creating-wallets)** - Deploy your predicted wallets
+- **[Checking Wallets](/docs/wallet-management/checking-wallets)** - Verify wallet existence
+- **[Custody Types](/docs/wallet-management/custody-types)** - Understand different wallet configurations
+- **[Quick Start Guide](/docs/getting-started/quick-start)** - Complete wallet creation workflow
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <p className="text-blue-800">
+    <strong>💡 Pro Tip:</strong> Always predict wallet addresses before creating them. This allows you to pre-fund wallets, verify addresses, and ensure deterministic behavior across deployments.
+  </p>
+</div>
+

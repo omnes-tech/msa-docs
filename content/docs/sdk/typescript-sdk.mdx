@@ -732,10 +732,304 @@ function isValidCustodyType(value: number): value is CustodyType {
 
 For complete API reference, see the [Interactive API Documentation](/docs/api-reference/interactive-docs).
 
+## SmartWallet SDK (Advanced)
+
+For advanced use cases, MSA provides the **SmartWallet SDK** - a lower-level SDK that gives you complete control over UserOperation construction and signing.
+
+### Installation
+
+```bash
+npm install @omnes/smartwallet-ts-sdk
+```
+
+### Key Features
+
+- ✅ **Complete UserOp Control**: Build and sign UserOperations manually
+- ✅ **Multiple Signers**: PKSigner, GCPSigner, MultisigSigner, PasskeySigner
+- ✅ **Self & Remote Bundler**: Choose your bundler strategy
+- ✅ **Custom Signatures**: Implement your own signing logic
+- ✅ **Gas Optimization**: Fine-tune gas settings
+
+### Quick Start with SmartWallet SDK
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+
+// Create signer
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+
+// Create SmartWallet instance
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,        // Messages sign method
+  signer.signMessage,         // UserOp hash sign method
+  signer.getEVMAddress(),    // Sender address
+  rpcURL,                     // RPC endpoint
+  apiKey                      // API key
+);
+
+// Build operations
+const operations: Operation = {
+  to: tokenAddress,
+  value: BigInt(0),
+  funcSignature: 'transfer(address,uint256)',
+  params: [recipient, amount]
+};
+
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1, // ECDSA_VALIDATOR
+    salt: 'user@example.com',
+    publicKeys: []
+  },
+  operations: [operations],
+  settings: {}
+}];
+
+// Build and send UserOperations
+const result = await smartWallet.buildAndRequestSendUserOperations(
+  accountOperations,
+  [], // useABI
+  []  // signers
+);
+
+console.log('Transaction hash:', result.response.txHash);
+```
+
+### Available Signers
+
+#### PKSigner (Private Key)
+
+```typescript
+import { PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+console.log('Address:', signer.getEVMAddress());
+```
+
+#### GCPSigner (Google Cloud KMS)
+
+```typescript
+import { GCPSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await GCPSigner.create(
+  googleCredentials,    // JSON string of GCP credentials
+  googleProjectId,      // GCP project ID
+  kmsLocationId,        // KMS location (e.g., 'us-east1')
+  kmsKeyRingId,         // KMS key ring ID
+  clientId,             // Client ID (crypto key name)
+  versionId             // Key version ID
+);
+
+console.log('Address:', signer.getEVMAddress());
+```
+
+#### MultisigSigner
+
+```typescript
+import { MultisigSigner, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer1 = await PKSigner.create(privateKey1 as `0x${string}`);
+const signer2 = await PKSigner.create(privateKey2 as `0x${string}`);
+const signer3 = await PKSigner.create(privateKey3 as `0x${string}`);
+
+const multisigSigner = MultisigSigner.create([signer1, signer2, signer3]);
+
+// Get addresses
+const addresses = multisigSigner.getEVMAddresses();
+console.log('Signer addresses:', addresses);
+```
+
+#### PasskeySigner
+
+```typescript
+import { PasskeySigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = PasskeySigner.create(webSocketURL);
+```
+
+### Bundler Options
+
+#### Remote Bundler (Default)
+
+```typescript
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey
+  // Defaults to remote bundler if available
+);
+
+const result = await smartWallet.buildAndRequestSendUserOperations(
+  accountOperations,
+  [],
+  []
+);
+```
+
+#### Self Bundler
+
+```typescript
+import { GCPSigner } from '@omnes/smartwallet-ts-sdk';
+
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey,
+  null,
+  true // Use self bundler
+);
+
+// Attach bundler
+const bundler = await GCPSigner.create(/* ... */);
+smartWallet.attachBundler(bundler.signTx);
+
+const result = await smartWallet.buildAndSendUserOperations(
+  accountOperations,
+  [],
+  []
+);
+```
+
+### Manual UserOp Construction
+
+For complete control:
+
+```typescript
+// Build UserOperations (not signed)
+const result = await smartWallet.buildUserOperations(
+  accountOperations,
+  [],
+  []
+);
+
+// Sign manually
+const signatures: `0x${string}`[] = [];
+for (const userOp of result.userOps) {
+  const signature = await signer.signMessage(toBytes(userOp.userOpHash));
+  signatures.push(toHex(signature) as `0x${string}`);
+}
+
+// Execute with signatures
+const response = await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  result.userOps,
+  result.accessList,
+  signatures,
+  [] // Operation settings
+);
+```
+
+### Advanced Features
+
+#### Gas Estimation
+
+```typescript
+const { gasLimit, gasPrice } = await smartWallet.estimateGas(
+  target,
+  value,
+  funcSignature,
+  funcArgs,
+  gasPrice,
+  accessList
+);
+```
+
+#### Reading Contracts
+
+```typescript
+const results = await smartWallet.read([
+  {
+    to: tokenAddress,
+    funcSignature: 'balanceOf(address)',
+    params: [walletAddress],
+    returnTypes: ['uint256']
+  }
+]);
+```
+
+#### Checking Accounts
+
+```typescript
+const accounts = await smartWallet.checkAccounts(
+  ['salt1', 'salt2'], // Salts
+  []                   // Wallet addresses
+);
+
+accounts.forEach(account => {
+  console.log(`Wallet ${account.wallet} exists: ${account.exists}`);
+});
+```
+
+### Complete Example
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+
+async function completeExample() {
+  // 1. Create signer
+  const signer = await PKSigner.create(privateKey as `0x${string}`);
+  
+  // 2. Create SmartWallet
+  const smartWallet = await SmartWallet.create(
+    signer.signMessage,
+    signer.signMessage,
+    signer.getEVMAddress(),
+    rpcURL,
+    apiKey
+  );
+  
+  // 3. Build operations
+  const operations: Operation = {
+    to: tokenAddress,
+    value: BigInt(0),
+    funcSignature: 'transfer(address,uint256)',
+    params: [recipient, amount]
+  };
+  
+  const accountOperations: AccountOperations[] = [{
+    account: {
+      walletCustody: 1,
+      salt: 'user@example.com',
+      publicKeys: []
+    },
+    operations: [operations],
+    settings: {}
+  }];
+  
+  // 4. Execute
+  const result = await smartWallet.buildAndRequestSendUserOperations(
+    accountOperations,
+    [],
+    []
+  );
+  
+  console.log('Transaction hash:', result.response.txHash);
+  console.log('Status:', result.response.status);
+  
+  return result;
+}
+```
+
+### SDK Features Comparison
+
+| Feature | MSAClient (High-Level) | SmartWallet SDK (Low-Level) |
+|---------|----------------------|--------------------------|
+| **Ease of Use** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
+| **Control** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Custom Signatures** | ❌ | ✅ |
+| **Manual UserOp Construction** | ❌ | ✅ |
+| **Gas Fine-tuning** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Passkey Support** | ✅ | ✅ |
+| **Multisig Support** | ✅ | ✅ |
+
 ## Next Steps
 
-- **[Explore Examples](/docs/sdk/javascript-examples)** - See practical implementation examples
-- **[Python SDK](/docs/sdk/python-examples)** - Use MSA API with Python
+- **[JavaScript Examples](/docs/sdk/javascript-examples)** - Native JavaScript examples
+- **[Python Examples](/docs/sdk/python-examples)** - Python SDK examples
+- **[cURL Examples](/docs/sdk/curl-examples)** - Command-line examples
 - **[Advanced Features](/docs/advanced/multisig)** - Learn about multisig and passkey wallets
 - **[Troubleshooting](/docs/advanced/troubleshooting)** - Common issues and solutions
 
@@ -743,6 +1037,6 @@ For complete API reference, see the [Interactive API Documentation](/docs/api-re
 
 <div className="mt-8 p-4 bg-blue-50 rounded-lg">
   <p className="text-blue-800">
-    <strong>💡 Need Help?</strong> Join our developer community or check our GitHub repository for examples and issue tracking.
+    <strong>💡 Need Help?</strong> Join our developer community or check our GitHub repository for examples and issue tracking. For advanced use cases, use the SmartWallet SDK for complete control.
   </p>
 </div> 

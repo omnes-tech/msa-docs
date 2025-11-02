@@ -1,0 +1,358 @@
+---
+title: Multi-Signature Wallets
+description: Complete guide to multi-signature wallets with MSA API, including setup, execution, and best practices.
+---
+
+# Multi-Signature Wallets
+
+Multi-signature (multisig) wallets require multiple signatures to approve transactions, providing enhanced security through distributed control.
+
+## Overview
+
+MSA supports two multisig custody types:
+- **MULTISIG_VALIDATOR (Type 4)**: Traditional M-of-N multisig
+- **MULTISIG_PASSKEY_VALIDATOR (Type 5)**: Multisig with passkey support
+
+## Understanding Thresholds
+
+The `threshold` parameter determines how many signatures are required:
+
+- **1-of-N**: Any signer can approve (least secure)
+- **M-of-N**: M signatures required (balanced)
+- **N-of-N**: All signers must approve (most secure)
+
+## Creating Multisig Wallets
+
+### Standard Multisig (Type 4)
+
+<Tabs items={["TypeScript", "Python", "cURL"]}>
+<Tab value="TypeScript">
+
+```typescript
+import { MSAClient, CustodyType } from '@omnes/msa-sdk';
+
+const client = new MSAClient({
+  baseURL: 'https://api.msa.omnes.tech',
+  defaultSettings: {
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+    entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618',
+    signer: {
+      clientId: process.env.MSA_CLIENT_ID!,
+      versionId: process.env.MSA_VERSION_ID!
+    }
+  }
+});
+
+// Create 2-of-3 multisig wallet
+const multisigWallet = await client.createWallet({
+  walletCustody: CustodyType.MULTISIG_VALIDATOR,
+  salt: 'org@example.com',
+  signers: [
+    '0x742d35Cc6676C461fAb7E06dcA6e1A1BB2b7d0Fd', // Signer 1
+    '0x8ba1f109551bD432803012645Hac136c0bf1E1A5', // Signer 2
+    '0x9D86b1BEE4F24C5F5e4B15c2C3d2F0f6Ff2F5f5E'  // Signer 3
+  ],
+  threshold: '2' // Require 2 of 3 signatures
+});
+
+console.log('Multisig wallet:', multisigWallet.wallet);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+def create_multisig_wallet():
+    url = "https://api.msa.omnes.tech/create"
+    
+    payload = {
+        "accounts": [{
+            "walletCustody": 4,  # MULTISIG_VALIDATOR
+            "salt": "org@example.com",
+            "signers": [
+                "0x742d35Cc6676C461fAb7E06dcA6e1A1BB2b7d0Fd",
+                "0x8ba1f109551bD432803012645Hac136c0bf1E1A5",
+                "0x9D86b1BEE4F24C5F5e4B15c2C3d2F0f6Ff2F5f5E"
+            ],
+            "threshold": "2"
+        }],
+        "settings": {
+            "rpc": "https://rpc-amoy.polygon.technology/",
+            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+            "beaconAdminCreationCode": "0x60a060405260405161059d...",
+            "signer": {
+                "clientId": "your-client-id",
+                "versionId": "1"
+            }
+        }
+    }
+    
+    response = requests.post(url, json=payload)
+    return response.json()
+
+create_multisig_wallet()
+```
+
+</Tab>
+<Tab value="cURL">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/create" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [{
+      "walletCustody": 4,
+      "salt": "org@example.com",
+      "signers": [
+        "0x742d35Cc6676C461fAb7E06dcA6e1A1BB2b7d0Fd",
+        "0x8ba1f109551bD432803012645Hac136c0bf1E1A5",
+        "0x9D86b1BEE4F24C5F5e4B15c2C3d2F0f6Ff2F5f5E"
+      ],
+      "threshold": "2"
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+      "beaconAdminCreationCode": "0x60a060405260405161059d...",
+      "signer": {
+        "clientId": "your-client-id",
+        "versionId": "1"
+      }
+    }
+  }'
+```
+
+</Tab>
+</Tabs>
+
+### Multisig + Passkey (Type 5)
+
+Combine traditional signers with passkeys:
+
+```typescript
+const enterpriseWallet = await client.createWallet({
+  walletCustody: CustodyType.MULTISIG_PASSKEY_VALIDATOR,
+  salt: 'enterprise@example.com',
+  signers: [
+    '0x742d35Cc6676C461fAb7E06dcA6e1A1BB2b7d0Fd', // ECDSA signer 1
+    '0x8ba1f109551bD432803012645Hac136c0bf1E1A5'  // ECDSA signer 2
+  ],
+  passkeyPubKey: [
+    'base64-url-key-1', // Passkey 1
+    'base64-url-key-2'  // Passkey 2
+  ],
+  threshold: '2' // Require 2 total (could be 1 signer + 1 passkey)
+});
+```
+
+## Threshold Configuration Examples
+
+### 2-of-3 (Recommended)
+
+Balanced security and flexibility:
+
+```typescript
+{
+  signers: [signer1, signer2, signer3],
+  threshold: '2'
+}
+```
+
+**Use Cases**: Most organizational wallets, shared custody scenarios
+
+### 3-of-5 (Higher Security)
+
+Requires majority approval:
+
+```typescript
+{
+  signers: [signer1, signer2, signer3, signer4, signer5],
+  threshold: '3'
+}
+```
+
+**Use Cases**: High-value wallets, compliance requirements
+
+### All-of-N (Maximum Security)
+
+Requires all signatures:
+
+```typescript
+{
+  signers: [signer1, signer2, signer3],
+  threshold: '3' // All must approve
+}
+```
+
+**Use Cases**: Critical operations, maximum security requirements
+
+## Executing Transactions
+
+Transactions from multisig wallets require signatures from multiple signers. The MSA API handles this automatically if you provide multiple signers in your configuration.
+
+### Standard Execution
+
+```typescript
+// Execute transaction - API will collect required signatures
+const result = await client.execute({
+  operations: [{
+    walletCustody: CustodyType.MULTISIG_VALIDATOR,
+    salt: 'org@example.com',
+    to: tokenAddress,
+    funcSignature: 'transfer(address,uint256)',
+    funcParams: [recipient, amount]
+  }]
+});
+```
+
+### Manual Signature Collection
+
+For custom signature flows:
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations } from '@omnes/smartwallet-ts-sdk';
+
+// Create signers for each party
+const signer1 = await PKSigner.create(privateKey1);
+const signer2 = await PKSigner.create(privateKey2);
+const signer3 = await PKSigner.create(privateKey3);
+
+// Build UserOperations
+const smartWallet = await SmartWallet.create(
+  signer1.signMessage, // Primary signer
+  signer1.signMessage,
+  signer1.getEVMAddress(),
+  rpcURL,
+  apiKey
+);
+
+const result = await smartWallet.buildUserOperations(accountOperations, [], []);
+
+// Collect signatures from required signers
+const signatures: `0x${string}`[] = [];
+const requiredSigners = [signer1, signer2]; // 2 of 3
+
+for (const userOp of result.userOps) {
+  // Collect signatures from required signers
+  const sigs = await Promise.all(
+    requiredSigners.map(signer => signer.signMessage(toBytes(userOp.userOpHash)))
+  );
+  
+  // Combine signatures (multisig format)
+  signatures.push(combineMultisigSignatures(sigs));
+}
+
+// Execute with collected signatures
+await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  result.userOps,
+  result.accessList,
+  signatures
+);
+```
+
+## Best Practices
+
+1. **Choose Threshold Carefully**: Balance security and convenience
+2. **Distribute Signers**: Don't store all keys in one place
+3. **Use Different Key Types**: Mix HSM, software, and passkeys
+4. **Plan for Key Loss**: Have recovery procedures
+5. **Document Signers**: Keep records of all signer addresses
+6. **Test Thresholds**: Test different threshold configurations
+
+## Common Patterns
+
+### Treasury Management
+
+```typescript
+// 3-of-5 treasury wallet
+const treasury = await client.createWallet({
+  walletCustody: CustodyType.MULTISIG_VALIDATOR,
+  salt: 'treasury@example.com',
+  signers: [
+    '0x...', // CEO
+    '0x...', // CFO
+    '0x...', // CTO
+    '0x...', // Legal
+    '0x...'  // Operations
+  ],
+  threshold: '3'
+});
+```
+
+### Escrow Services
+
+```typescript
+// 2-of-3 escrow wallet
+const escrow = await client.createWallet({
+  walletCustody: CustodyType.MULTISIG_VALIDATOR,
+  salt: 'escrow-12345',
+  signers: [
+    '0x...', // Buyer
+    '0x...', // Seller
+    '0x...'  // Escrow service
+  ],
+  threshold: '2'
+});
+```
+
+## Adding/Removing Signers
+
+To modify signers, you need to execute a transaction on the wallet contract:
+
+```typescript
+// Add new signer
+await client.execute({
+  operations: [{
+    walletCustody: CustodyType.MULTISIG_VALIDATOR,
+    salt: 'org@example.com',
+    to: walletAddress,
+    funcSignature: 'addSigner(address,(bool,bool,bool,bool))',
+    funcParams: [newSignerAddress, [true, true, true, true]]
+  }]
+});
+
+// Remove signer
+await client.execute({
+  operations: [{
+    walletCustody: CustodyType.MULTISIG_VALIDATOR,
+    salt: 'org@example.com',
+    to: walletAddress,
+    funcSignature: 'removeSigner(address)',
+    funcParams: [signerToRemove]
+  }]
+});
+```
+
+## Security Considerations
+
+1. **Key Distribution**: Store signer keys in different locations
+2. **Backup Procedures**: Have recovery plans for lost keys
+3. **Access Control**: Limit access to signer keys
+4. **Monitoring**: Track all multisig transactions
+5. **Audit Trails**: Maintain records of all approvals
+
+## Next Steps
+
+- **[Passkey Wallets](/docs/advanced/passkeys)** - Learn about passkey integration
+- **[Troubleshooting](/docs/advanced/troubleshooting)** - Common issues and solutions
+- **[Custody Types](/docs/wallet-management/custody-types)** - Understand all custody types
+
+---
+
+<div className="mt-8 p-4 bg-purple-50 rounded-lg">
+  <p className="text-purple-800">
+    <strong>🔐 Enhanced Security:</strong> Multisig wallets provide distributed control and enhanced security through multiple signature requirements.
+  </p>
+</div>
+

@@ -1,0 +1,420 @@
+---
+title: Checking Wallet Status
+description: Verify wallet existence, deployment status, and retrieve wallet information using the MSA API.
+---
+
+# Checking Wallet Status
+
+The MSA API provides endpoints to check wallet existence, verify deployment status, and retrieve wallet information. This is essential for managing wallet lifecycle and ensuring wallets are properly deployed.
+
+## Overview
+
+You can check wallet status by:
+- **Salt**: Check if a wallet exists for a given salt
+- **Address**: Verify if an address is a valid MSA wallet
+- **Batch Checks**: Check multiple wallets at once
+
+## Basic Wallet Check
+
+### Check by Salt
+
+<Tabs items={["TypeScript", "Python", "cURL"]}>
+<Tab value="TypeScript">
+
+```typescript
+import { MSAClient, CustodyType } from '@omnes/msa-sdk';
+
+const client = new MSAClient({
+  baseURL: 'https://api.msa.omnes.tech',
+  defaultSettings: {
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+    entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618'
+  }
+});
+
+// Check if wallet exists
+const checkResult = await client.checkWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com'
+});
+
+if (checkResult.exists) {
+  console.log('Wallet exists at:', checkResult.wallet);
+} else {
+  console.log('Wallet not deployed yet');
+}
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+def check_wallet():
+    url = "https://api.msa.omnes.tech/check"
+    
+    payload = {
+        "accounts": [{
+            "walletCustody": 1,
+            "salt": "user@example.com"
+        }],
+        "settings": {
+            "rpc": "https://rpc-amoy.polygon.technology/",
+            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
+        }
+    }
+    
+    response = requests.post(url, json=payload)
+    result = response.json()
+    
+    wallet = result['results'][0]
+    print(f'Wallet exists: {wallet["exists"]}')
+    print(f'Wallet address: {wallet["wallet"]}')
+    return wallet['exists']
+
+check_wallet()
+```
+
+</Tab>
+<Tab value="cURL">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/check" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [{
+      "walletCustody": 1,
+      "salt": "user@example.com"
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
+    }
+  }'
+```
+
+</Tab>
+</Tabs>
+
+**Expected Response:**
+
+```json
+{
+  "results": [{
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "salt": "user@example.com",
+    "walletCustody": 1,
+    "exists": true
+  }]
+}
+```
+
+## Check by Address
+
+You can also check if a specific address is a deployed MSA wallet:
+
+```typescript
+const checkResult = await client.checkWalletByAddress({
+  wallet: '0x28097eF2268B553783D9c32A33ECb1bB78B209F3'
+});
+
+if (checkResult.exists) {
+  console.log('Address is a valid MSA wallet');
+} else {
+  console.log('Address is not a deployed wallet');
+}
+```
+
+## Batch Wallet Checks
+
+Check multiple wallets at once:
+
+```typescript
+const checkResults = await client.checkWallets([
+  { walletCustody: CustodyType.ECDSA_VALIDATOR, salt: 'user1@example.com' },
+  { walletCustody: CustodyType.ECDSA_VALIDATOR, salt: 'user2@example.com' },
+  { walletCustody: CustodyType.PASSKEY_VALIDATOR, salt: 'user3@example.com' }
+]);
+
+checkResults.forEach((result, i) => {
+  if (result.exists) {
+    console.log(`Wallet ${i + 1} exists:`, result.wallet);
+  } else {
+    console.log(`Wallet ${i + 1} not deployed yet`);
+  }
+});
+```
+
+## Wallet Status Workflow
+
+Complete workflow for checking wallet status:
+
+```typescript
+async function checkWalletStatus(salt: string) {
+  // 1. Predict address
+  const prediction = await client.predictWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt
+  });
+  
+  console.log('Predicted address:', prediction.wallet);
+  
+  // 2. Check if wallet exists
+  const check = await client.checkWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt
+  });
+  
+  if (check.exists) {
+    console.log('✅ Wallet is deployed');
+    console.log('   Address:', check.wallet);
+    console.log('   Matches prediction:', check.wallet === prediction.wallet);
+    
+    // 3. Verify wallet code
+    const walletCode = await provider.getCode(check.wallet);
+    const hasCode = walletCode !== '0x';
+    console.log('   Has contract code:', hasCode);
+    
+    return {
+      exists: true,
+      wallet: check.wallet,
+      deployed: hasCode
+    };
+  } else {
+    console.log('⚠️ Wallet not deployed yet');
+    console.log('   Create wallet to deploy');
+    
+    return {
+      exists: false,
+      wallet: prediction.wallet,
+      deployed: false
+    };
+  }
+}
+```
+
+## Using SmartWallet SDK
+
+With the SmartWallet SDK, you can check wallets locally:
+
+```typescript
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey
+);
+
+// Check wallets by salt
+const salts = ['user1@example.com', 'user2@example.com'];
+const wallets: string[] = [];
+
+const accounts = await smartWallet.checkAccounts(salts, wallets);
+
+accounts.forEach(account => {
+  if (account.exists) {
+    console.log(`Wallet ${account.wallet} exists`);
+  } else {
+    console.log(`Wallet for salt ${account.salt} not deployed`);
+  }
+});
+```
+
+## Check Before Creation
+
+Always check if wallet exists before creating:
+
+```typescript
+async function createWalletIfNotExists(salt: string) {
+  // Check if wallet already exists
+  const check = await client.checkWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt
+  });
+  
+  if (check.exists) {
+    console.log('Wallet already exists:', check.wallet);
+    return { wallet: check.wallet, created: false };
+  }
+  
+  // Wallet doesn't exist, create it
+  console.log('Creating wallet...');
+  const result = await client.createWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt
+  });
+  
+  return { 
+    wallet: result.wallet, 
+    txHash: result.txHash, 
+    created: true 
+  };
+}
+```
+
+## Response Format
+
+### Successful Check
+
+```typescript
+interface CheckResult {
+  wallet: string;        // Wallet address
+  salt: string;         // Salt used
+  walletCustody: number; // Custody type
+  exists: boolean;      // Whether wallet is deployed
+}
+```
+
+### Batch Check Results
+
+```typescript
+interface BatchCheckResult {
+  results: CheckResult[]; // Array of check results
+}
+```
+
+## Use Cases
+
+### 1. Wallet Lookup by User ID
+
+```typescript
+async function getUserWallet(userId: string) {
+  const salt = `user-${userId}`;
+  
+  const check = await client.checkWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt
+  });
+  
+  if (check.exists) {
+    return {
+      userId,
+      wallet: check.wallet,
+      status: 'deployed'
+    };
+  } else {
+    // Predict address for future deployment
+    const prediction = await client.predictWallet({
+      walletCustody: CustodyType.ECDSA_VALIDATOR,
+      salt
+    });
+    
+    return {
+      userId,
+      wallet: prediction.wallet,
+      status: 'not_deployed'
+    };
+  }
+}
+```
+
+### 2. Verify Wallet Deployment
+
+```typescript
+async function verifyWalletDeployment(salt: string, txHash: string) {
+  // Wait for transaction confirmation
+  await waitForTransaction(txHash);
+  
+  // Check wallet status
+  const check = await client.checkWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt
+  });
+  
+  if (check.exists) {
+    console.log('✅ Wallet deployment verified');
+    return true;
+  } else {
+    console.error('❌ Wallet deployment failed');
+    return false;
+  }
+}
+```
+
+### 3. Batch Wallet Status Check
+
+```typescript
+async function checkAllUserWallets(userIds: string[]) {
+  const salts = userIds.map(id => `user-${id}`);
+  
+  const checkResults = await client.checkWallets(
+    salts.map(salt => ({
+      walletCustody: CustodyType.ECDSA_VALIDATOR,
+      salt
+    }))
+  );
+  
+  const status = checkResults.map((result, i) => ({
+    userId: userIds[i],
+    wallet: result.wallet,
+    exists: result.exists
+  }));
+  
+  const deployed = status.filter(s => s.exists);
+  const notDeployed = status.filter(s => !s.exists);
+  
+  console.log(`Deployed: ${deployed.length}`);
+  console.log(`Not deployed: ${notDeployed.length}`);
+  
+  return { deployed, notDeployed };
+}
+```
+
+## Error Handling
+
+```typescript
+try {
+  const check = await client.checkWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user@example.com'
+  });
+  
+  console.log('Check successful:', check.exists);
+} catch (error) {
+  if (error.message.includes('Invalid settings')) {
+    console.error('Check your factory and validator addresses');
+  } else if (error.message.includes('network')) {
+    console.error('Network connection failed');
+  } else {
+    console.error('Check failed:', error.message);
+  }
+}
+```
+
+## Best Practices
+
+1. **Always Check First**: Check wallet existence before creating
+2. **Verify After Creation**: Confirm wallet deployment after creation
+3. **Batch Operations**: Use batch checks for multiple wallets
+4. **Cache Results**: Cache check results to reduce API calls
+5. **Error Handling**: Handle network errors and invalid responses
+
+## Next Steps
+
+- **[Creating Wallets](/docs/wallet-management/creating-wallets)** - Deploy new wallets
+- **[Predicting Addresses](/docs/wallet-management/predicting-addresses)** - Calculate wallet addresses
+- **[Custody Types](/docs/wallet-management/custody-types)** - Understand wallet configurations
+- **[Transaction Execution](/docs/transaction-execution/basic-execution)** - Start using your wallets
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <p className="text-blue-800">
+    <strong>💡 Pro Tip:</strong> Always check wallet existence before creation to avoid duplicate deployments and unnecessary gas costs.
+  </p>
+</div>
+

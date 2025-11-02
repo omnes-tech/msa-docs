@@ -1,0 +1,359 @@
+---
+title: Basic Transaction Execution
+description: Execute transactions from your MSA wallets with basic operations, batch transactions, and gas management.
+---
+
+# Basic Transaction Execution
+
+Execute transactions from your Account Abstraction wallets using the MSA API. This guide covers basic operations, batch transactions, and common execution patterns.
+
+## Overview
+
+Transaction execution in MSA works through **UserOperations** (UserOps), which are bundled and sent through the EntryPoint contract. This enables batch operations, gas abstraction, and advanced transaction features.
+
+## Basic Transaction
+
+### Single Operation
+
+<Tabs items={["TypeScript", "Python", "cURL"]}>
+<Tab value="TypeScript">
+
+```typescript
+import { MSAClient, CustodyType } from '@omnes/msa-sdk';
+
+const client = new MSAClient({
+  baseURL: 'https://api.msa.omnes.tech',
+  defaultSettings: {
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+    entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618',
+    signer: {
+      clientId: process.env.MSA_CLIENT_ID!,
+      versionId: process.env.MSA_VERSION_ID!
+    }
+  }
+});
+
+// Execute a token transfer
+const result = await client.execute({
+  operations: [{
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user@example.com',
+    to: '0x097d4Aed5924e2172451973153Fc0e03407eD1F9', // Token contract
+    funcSignature: 'transfer(address,uint256)',
+    funcParams: [
+      '0xRecipientAddress...',
+      '1000000000000000000' // 1 token (18 decimals)
+    ]
+  }]
+});
+
+console.log('Transaction hash:', result.txHash);
+console.log('Status:', result.status === 1 ? 'Success' : 'Failed');
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+def execute_transaction():
+    url = "https://api.msa.omnes.tech/execute"
+    
+    payload = {
+        "operations": [{
+            "walletCustody": 1,
+            "salt": "user@example.com",
+            "to": "0x097d4Aed5924e2172451973153Fc0e03407eD1F9",
+            "funcSignature": "transfer(address,uint256)",
+            "funcParams": [
+                "0xRecipientAddress...",
+                "1000000000000000000"
+            ]
+        }],
+        "settings": {
+            "rpc": "https://rpc-amoy.polygon.technology/",
+            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+            "signer": {
+                "clientId": "your-client-id",
+                "versionId": "1"
+            }
+        }
+    }
+    
+    response = requests.post(url, json=payload)
+    result = response.json()
+    
+    print(f'Transaction hash: {result["txHash"]}')
+    return result
+
+execute_transaction()
+```
+
+</Tab>
+<Tab value="cURL">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/execute" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operations": [{
+      "walletCustody": 1,
+      "salt": "user@example.com",
+      "to": "0x097d4Aed5924e2172451973153Fc0e03407eD1F9",
+      "funcSignature": "transfer(address,uint256)",
+      "funcParams": [
+        "0xRecipientAddress...",
+        "1000000000000000000"
+      ]
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+      "signer": {
+        "clientId": "your-client-id",
+        "versionId": "1"
+      }
+    }
+  }'
+```
+
+</Tab>
+</Tabs>
+
+## Batch Operations
+
+Execute multiple operations in a single transaction:
+
+```typescript
+const result = await client.execute({
+  operations: [
+    {
+      walletCustody: CustodyType.ECDSA_VALIDATOR,
+      salt: 'user@example.com',
+      to: '0x097d4Aed5924e2172451973153Fc0e03407eD1F9',
+      funcSignature: 'approve(address,uint256)',
+      funcParams: ['0xSpenderAddress...', '1000000000000000000']
+    },
+    {
+      walletCustody: CustodyType.ECDSA_VALIDATOR,
+      salt: 'user@example.com',
+      to: '0xDeFiProtocol...',
+      funcSignature: 'deposit(uint256)',
+      funcParams: ['1000000000000000000']
+    },
+    {
+      walletCustody: CustodyType.ECDSA_VALIDATOR,
+      salt: 'user@example.com',
+      to: '0xAnotherContract...',
+      funcSignature: 'someFunction(address,uint256)',
+      funcParams: ['0xAddress...', '123456']
+    }
+  ]
+});
+```
+
+## Operation Types
+
+### Value Transfer (ETH/MATIC)
+
+```typescript
+const result = await client.execute({
+  operations: [{
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user@example.com',
+    to: '0xRecipientAddress...',
+    value: '1000000000000000000', // 1 ETH in wei
+    funcSignature: '', // Empty for value transfer
+    funcParams: []
+  }]
+});
+```
+
+### ERC-20 Token Operations
+
+```typescript
+// Transfer
+const transfer = await client.execute({
+  operations: [{
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user@example.com',
+    to: tokenAddress,
+    funcSignature: 'transfer(address,uint256)',
+    funcParams: [recipient, amount]
+  }]
+});
+
+// Approve
+const approve = await client.execute({
+  operations: [{
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user@example.com',
+    to: tokenAddress,
+    funcSignature: 'approve(address,uint256)',
+    funcParams: [spender, amount]
+  }]
+});
+```
+
+### DeFi Operations
+
+```typescript
+// Swap on DEX
+const swap = await client.execute({
+  operations: [{
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user@example.com',
+    to: dexRouterAddress,
+    funcSignature: 'swapExactTokensForTokens(uint256,uint256,address[],address,uint256)',
+    funcParams: [
+      amountIn,
+      amountOutMin,
+      path,
+      recipient,
+      deadline
+    ]
+  }]
+});
+```
+
+## Operation Settings
+
+Configure time constraints and gas settings:
+
+```typescript
+const result = await client.execute({
+  operations: [{
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user@example.com',
+    to: tokenAddress,
+    funcSignature: 'transfer(address,uint256)',
+    funcParams: [recipient, amount],
+    // Optional settings
+    validAfter: Math.floor(Date.now() / 1000), // Valid from now
+    validUntil: Math.floor(Date.now() / 1000) + 3600, // Valid for 1 hour
+    nonceKey: '12345', // Custom nonce key
+    maxFeePerGas: '50000000000',
+    maxPriorityFeePerGas: '2000000000'
+  }]
+});
+```
+
+## Response Format
+
+```typescript
+interface ExecutionResult {
+  status: number;           // 1 = success, 0 = failed
+  txHash: string;          // Transaction hash
+  gasUsed: number;         // Gas consumed
+  effectiveGasPrice: string; // Effective gas price
+  cumulativeGasUsed: number; // Cumulative gas
+  logs: any[];             // Event logs
+  errors: any[];           // Any errors
+  returnData: any[];       // Return values
+}
+```
+
+## Error Handling
+
+```typescript
+try {
+  const result = await client.execute({
+    operations: [{
+      walletCustody: CustodyType.ECDSA_VALIDATOR,
+      salt: 'user@example.com',
+      to: tokenAddress,
+      funcSignature: 'transfer(address,uint256)',
+      funcParams: [recipient, amount]
+    }]
+  });
+  
+  if (result.status === 1) {
+    console.log('Transaction successful:', result.txHash);
+  } else {
+    console.error('Transaction failed:', result.errors);
+  }
+} catch (error) {
+  if (error.message.includes('insufficient funds')) {
+    console.error('Wallet needs more funds');
+  } else if (error.message.includes('Invalid signature')) {
+    console.error('Check your Fireblocks credentials');
+  } else {
+    console.error('Execution failed:', error.message);
+  }
+}
+```
+
+## Using SmartWallet SDK
+
+Execute transactions using the SmartWallet SDK:
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey
+);
+
+const operations: Operation = {
+  to: tokenAddress,
+  value: BigInt(0),
+  funcSignature: 'transfer(address,uint256)',
+  params: [recipient, amount]
+};
+
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1, // ECDSA_VALIDATOR
+    salt: 'user@example.com',
+    publicKeys: []
+  },
+  operations: [operations],
+  settings: {}
+}];
+
+const result = await smartWallet.buildAndRequestSendUserOperations(
+  accountOperations,
+  [],
+  []
+);
+
+console.log('Transaction hash:', result.response.txHash);
+```
+
+## Best Practices
+
+1. **Estimate Gas First**: Use gas estimation before execution
+2. **Handle Errors**: Always check status and errors
+3. **Use Batch Operations**: Group related operations
+4. **Set Time Limits**: Use validAfter/validUntil for time-sensitive ops
+5. **Monitor Transactions**: Track execution results
+
+## Next Steps
+
+- **[Encoded Execution](/docs/transaction-execution/encoded-execution)** - Execute pre-encoded UserOperations
+- **[Passkey Execution](/docs/transaction-execution/passkey-execution)** - Execute with passkey signatures
+- **[Gas Estimation](/docs/transaction-execution/gas-estimation)** - Estimate transaction costs
+
+---
+
+<div className="mt-8 p-4 bg-green-50 rounded-lg">
+  <p className="text-green-800">
+    <strong>✅ Ready to Execute!</strong> Your transactions are ready to be sent. Use batch operations to save gas and improve user experience.
+  </p>
+</div>
+
