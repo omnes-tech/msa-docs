@@ -1,53 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { source } from '@/lib/source';
-import {
-  DocsPage,
-  DocsBody,
-  DocsDescription,
-  DocsTitle,
-} from 'fumadocs-ui/page';
-import { notFound } from 'next/navigation';
-import { createRelativeLink } from 'fumadocs-ui/mdx';
-import { getMDXComponents } from '@/mdx-components';
+import { redirect } from 'next/navigation';
 
+// Redirect old routes to English version
 export default async function Page(props: {
   params: Promise<{ slug?: string[] }>;
 }) {
   const params = await props.params;
-  const page = source.getPage(params.slug);
-  if (!page) notFound();
-
-  const MDXContent = (page.data as any).body;
-
-  return (
-    <DocsPage toc={(page.data as any).toc} full={(page.data as any).full}>
-      <DocsTitle>{(page.data as any).title}</DocsTitle>
-      <DocsDescription>{(page.data as any).description}</DocsDescription>
-      <DocsBody>
-        <MDXContent
-          components={getMDXComponents({
-            // this allows you to link to other pages with relative file paths
-            a: createRelativeLink(source, page),
-          })}
-        />
-      </DocsBody>
-    </DocsPage>
-  );
-}
-
-export async function generateStaticParams() {
-  return source.generateParams();
-}
-
-export async function generateMetadata(props: {
-  params: Promise<{ slug?: string[] }>;
-}) {
-  const params = await props.params;
-  const page = source.getPage(params.slug);
-  if (!page) notFound();
-
-  return {
-    title: (page.data as any).title,
-    description: (page.data as any).description,
-  };
+  const slug = params.slug || [];
+  
+  // Redirect to English version
+  redirect(`/docs/en/${slug.join('/')}`);
 }

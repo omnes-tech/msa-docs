@@ -1,0 +1,384 @@
+---
+title: Criando Carteiras
+description: Aprenda como criar carteiras Account Abstraction usando a API MSA com vários tipos de custody e configurações.
+---
+
+# Criando Carteiras
+
+Criar carteiras com a API MSA é simples. Este guia cobre tudo que você precisa saber sobre implantar carteiras de smart contract com diferentes configurações de custody.
+
+## Visão Geral
+
+A API MSA permite criar carteiras Account Abstraction em qualquer rede compatível com EVM. As carteiras são criadas usando um algoritmo de geração de endereço determinístico (CREATE3), garantindo que você possa prever o endereço da carteira antes da implantação.
+
+## Criação Básica de Carteira
+
+### Criação de Carteira Única
+
+<Tabs items={["TypeScript", "Python", "cURL"]}>
+<Tab value="TypeScript">
+
+```typescript
+// Using API HTTP (fetch)
+const response = await fetch('https://api.msa.omnes.tech/create', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    accounts: [{
+      walletCustody: 1, // ECDSA_VALIDATOR
+      salt: 'user@example.com'
+    }],
+    settings: {
+      rpc: 'https://rpc-amoy.polygon.technology/',
+      factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+      validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618',
+      signer: {
+        clientId: process.env.MSA_CLIENT_ID!,
+        versionId: process.env.MSA_VERSION_ID!
+      }
+    }
+  })
+});
+
+const result = await response.json();
+
+console.log('Wallet address:', result.returnData[0]['0'].wallet);
+console.log('Transaction hash:', result.txHash);
+console.log('Status:', result.status === 1 ? 'Success' : 'Failed');
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+def create_wallet():
+    url = "https://api.msa.omnes.tech/create"
+    
+    payload = {
+        "accounts": [{
+            "walletCustody": 1,  # ECDSA_VALIDATOR
+            "salt": "user@example.com"
+        }],
+        "settings": {
+            "rpc": "https://rpc-amoy.polygon.technology/",
+            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+            "beaconAdminCreationCode": "0x60a060405260405161059d...",  # Full bytecode
+            "signer": {
+                "clientId": "your-client-id",
+                "versionId": "1"
+            }
+        }
+    }
+    
+    response = requests.post(url, json=payload)
+    result = response.json()
+    
+    print(f'Wallet address: {result["returnData"][0]["0"]["wallet"]}')
+    print(f'Transaction hash: {result["txHash"]}')
+    return result
+
+create_wallet()
+```
+
+</Tab>
+<Tab value="cURL">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/create" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [{
+      "walletCustody": 1,
+      "salt": "user@example.com"
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+      "beaconAdminCreationCode": "0x60a060405260405161059d...",
+      "signer": {
+        "clientId": "your-client-id",
+        "versionId": "1"
+      }
+    }
+  }'
+```
+
+</Tab>
+</Tabs>
+
+**Expected Response:**
+
+```json
+{
+  "status": 1,
+  "txHash": "0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938",
+  "gasUsed": 549731,
+  "effectiveGasPrice": "1136849215",
+  "returnData": [{
+    "0": {
+      "salt": "user@example.com",
+      "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+    }
+  }]
+}
+```
+
+## Criação de Carteira com Diferentes Tipos de Custody
+
+### Validador ECDSA (Tipo 1)
+
+Carteira padrão com validação de assinatura ECDSA:
+
+```typescript
+const ecdsaWallet = await client.createWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'ecdsa-user@example.com'
+});
+```
+
+### Validador Passkey (Tipo 3)
+
+Carteira baseada apenas em passkey que requer uma chave pública:
+
+```typescript
+const passkeyWallet = await client.createWallet({
+  walletCustody: CustodyType.PASSKEY_VALIDATOR,
+  salt: 'passkey-user@example.com',
+  passkeyPubKey: ['base64-url-encoded-public-key'] // Keep in DER format!
+});
+```
+
+**Important**: The passkey public key must be:
+- Base64URL encoded
+- In DER format (do NOT convert)
+- Generated with P-256 curve (ES256)
+- With UP and UV flags enabled
+
+### ECDSA + Passkey Validator (Type 2)
+
+Hybrid wallet supporting both ECDSA and passkey:
+
+```typescript
+const hybridWallet = await client.createWallet({
+  walletCustody: CustodyType.ECDSA_PASSKEY_VALIDATOR,
+  salt: 'hybrid-user@example.com',
+  passkeyPubKey: ['base64-url-encoded-public-key']
+});
+```
+
+### Validador Multisig (Tipo 4)
+
+Carteira multi-assinatura que requer múltiplos signatários:
+
+```typescript
+const multisigWallet = await client.createWallet({
+  walletCustody: CustodyType.MULTISIG_VALIDATOR,
+  salt: 'multisig-org@example.com',
+  signers: [
+    '0x742d35Cc6676C461fAb7E06dcA6e1A1BB2b7d0Fd',
+    '0x8ba1f109551bD432803012645Hac136c0bf1E1A5',
+    '0x9D86b1BEE4F24C5F5e4B15c2C3d2F0f6Ff2F5f5E'
+  ],
+  threshold: '2' // Require 2 of 3 signatures
+});
+```
+
+### Multisig + Passkey Validator (Type 5)
+
+Enterprise-grade wallet combining multisig with passkey:
+
+```typescript
+const enterpriseWallet = await client.createWallet({
+  walletCustody: CustodyType.MULTISIG_PASSKEY_VALIDATOR,
+  salt: 'enterprise-org@example.com',
+  signers: ['0x742d35Cc6676C461fAb7E06dcA6e1A1BB2b7d0Fd'],
+  passkeyPubKey: ['base64-url-encoded-public-key'],
+  threshold: '2' // Require 2 total (1 signer + 1 passkey)
+});
+```
+
+## Criação de Carteiras em Lote
+
+Crie múltiplas carteiras em uma única transação:
+
+```typescript
+const batchResult = await client.createWallets([
+  {
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user1@example.com'
+  },
+  {
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user2@example.com'
+  },
+  {
+    walletCustody: CustodyType.PASSKEY_VALIDATOR,
+    salt: 'user3@example.com',
+    passkeyPubKey: ['base64-key-here']
+  }
+]);
+
+console.log(`Created ${batchResult.returnData.length} wallets`);
+```
+
+## Pre-requisites
+
+Before creating a wallet, ensure:
+
+1. **Sufficient Gas**: The predicted wallet address must have enough native tokens for gas
+2. **Fireblocks Credentials**: Valid `clientId` and `versionId` (HSM) or `assetId` (MPC)
+3. **Network Access**: Correct RPC endpoint for your target blockchain
+4. **Contract Addresses**: Factory and validator addresses configured
+
+## Funding the Wallet
+
+Before creation, fund the predicted wallet address:
+
+```typescript
+// 1. Predict the wallet address
+const prediction = await client.predictWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com'
+});
+
+console.log('Predicted address:', prediction.wallet);
+
+// 2. Fund the wallet (send native tokens)
+// Use your preferred method:
+// - Transfer from another wallet
+// - Use a faucet (testnet)
+// - Fund via payment gateway
+
+// 3. Create the wallet
+const result = await client.createWallet({
+  walletCustody: CustodyType.ECDSA_VALIDATOR,
+  salt: 'user@example.com'
+});
+```
+
+## Salt da Carteira
+
+O parâmetro `salt` é crítico:
+
+- **Determinístico**: Mesmo salt sempre gera o mesmo endereço
+- **Único**: Use diferentes salts para diferentes carteiras
+- **Formato**: Pode ser qualquer string (email, UUID, ID do usuário, etc.)
+- **Exemplos**:
+  - `user@example.com`
+  - `user-12345`
+  - `0xabc123def456`
+  - `unique-identifier-v1`
+
+**Importante**: Uma vez que uma carteira é criada com um salt, você não pode reutilizar esse salt para criar uma nova carteira.
+
+## Códigos de Status de Resposta
+
+O campo `status` na resposta indica o resultado da transação:
+
+| Status | Código | Descrição |
+|--------|--------|-----------|
+| Sucesso | `1` | Carteira criada com sucesso |
+| Falhou | `0` | Transação falhou |
+| Já Existe | `2` | Carteira já implantada |
+| Criada Parcialmente | `3` | Algumas carteiras no lote foram criadas |
+
+## Tratamento de Erros
+
+```typescript
+try {
+  const result = await client.createWallet({
+    walletCustody: CustodyType.ECDSA_VALIDATOR,
+    salt: 'user@example.com'
+  });
+  
+  if (result.status === 2) {
+    console.warn('Wallet already exists');
+  } else if (result.status === 1) {
+    console.log('Wallet created successfully');
+  }
+} catch (error) {
+  if (error.message.includes('insufficient funds')) {
+    console.error('Fund the predicted wallet address first');
+  } else if (error.message.includes('Invalid client ID')) {
+    console.error('Check your Fireblocks credentials');
+  } else {
+    console.error('Error:', error.message);
+  }
+}
+```
+
+## Using the SmartWallet SDK
+
+If you're using the TypeScript SmartWallet SDK, wallet creation is handled automatically:
+
+```typescript
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+// Create signer
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+
+// Create SmartWallet instance
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey
+);
+
+// Build operations
+const accountOperations = [{
+  account: {
+    walletCustody: 1, // ECDSA_VALIDATOR
+    salt: 'user@example.com',
+    publicKeys: []
+  },
+  operations: [], // No operations needed for wallet creation
+  settings: {}
+}];
+
+// Build and send
+const result = await smartWallet.buildAndRequestSendUserOperations(
+  accountOperations,
+  [],
+  []
+);
+
+console.log('Transaction hash:', result.response.txHash);
+```
+
+## Melhores Práticas
+
+1. **Sempre Preveja Primeiro**: Preveja endereços de carteira antes de financiar
+2. **Use Salts Significativos**: Escolha salts que sejam únicos e significativos
+3. **Lide com Carteiras Existentes**: Verifique se a carteira existe antes da criação
+4. **Monitore Custos de Gas**: Rastreie uso de gas para otimização
+5. **Teste em Testnet**: Sempre teste a criação de carteira em testnet primeiro
+
+## Próximos Passos
+
+- **[Prevendo Endereços](/docs/wallet-management/predicting-addresses)** - Aprenda como prever endereços de carteira
+- **[Verificando Carteiras](/docs/wallet-management/checking-wallets)** - Verifique existência da carteira
+- **[Tipos de Custody](/docs/wallet-management/custody-types)** - Entenda diferentes configurações de carteira
+- **[Execução de Transações](/docs/transaction-execution/basic-execution)** - Comece a usar suas carteiras
+
+---
+
+<div className="mt-8 p-4 bg-green-50 rounded-lg">
+  <div className="text-green-800">
+    <strong>✅ Wallet Created!</strong> Your wallet is now ready to use. You can start executing transactions and managing your Account Abstraction wallet.
+  </div>
+</div>
+

@@ -1,0 +1,377 @@
+---
+title: Autenticação Passkey
+description: Guia completo para carteiras baseadas em passkey com integração WebAuthn, registro e assinatura de transações.
+---
+
+# Autenticação Passkey
+
+Carteiras passkey fornecem autenticação sem senha baseada em biometria sem gerenciar chaves privadas. Este guia cobre integração completa de passkey com a API MSA.
+
+## Visão Geral
+
+A MSA suporta três tipos de custody habilitados para passkey:
+- **PASSKEY_VALIDATOR (Tipo 3)**: Baseado puramente em passkey
+- **ECDSA_PASSKEY_VALIDATOR (Tipo 2)**: Híbrido ECDSA + passkey
+- **MULTISIG_PASSKEY_VALIDATOR (Tipo 5)**: Multisig com passkey
+
+## Registro de Passkey
+
+### Requisitos de Registro
+
+**Crítico**: Passkeys devem ser registrados com estas especificações exatas:
+
+```typescript
+const publicKeyOptions = {
+  pubKeyCredParams: [
+    {
+      type: "public-key" as const,
+      alg: -7, // ES256 (P-256 curve) - REQUIRED
+    },
+  ],
+  attestation: "direct" as AttestationConveyancePreference,
+  authenticatorSelection: {
+    authenticatorAttachment: "platform" as AuthenticatorAttachment, // Platform authenticators
+    residentKey: "required" as ResidentKeyRequirement,
+    requireResidentKey: true,
+    userVerification: "required" as UserVerificationRequirement, // UV flag - REQUIRED
+  }
+};
+```
+
+### Registration Code
+
+```typescript
+async function registerPasskey(userId: string, userName: string) {
+  // Generate challenge
+  const challenge = new Uint8Array(32);
+  crypto.getRandomValues(challenge);
+  
+  const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
+    challenge,
+    rp: {
+      name: "Your App Name",
+      id: window.location.hostname,
+    },
+    user: {
+      id: new TextEncoder().encode(userId),
+      name: userName,
+      displayName: userName,
+    },
+    pubKeyCredParams: [
+      {
+        type: "public-key",
+        alg: -7, // ES256
+      },
+    ],
+    attestation: "direct",
+    authenticatorSelection: {
+      authenticatorAttachment: "platform",
+      residentKey: "required",
+      requireResidentKey: true,
+      userVerification: "required",
+    },
+  };
+  
+  // Create credential
+  const credential = await navigator.credentials.create({
+    publicKey: publicKeyCredentialCreationOptions
+  }) as PublicKeyCredential;
+  
+  if (!credential) {
+    throw new Error('Failed to create passkey');
+  }
+  
+  const response = credential.response as AuthenticatorAttestationResponse;
+  
+  // Extract public key (CRITICAL: Keep in base64URL DER format)
+  const publicKey = extractPublicKey(response);
+  
+  // Store credential ID and public key
+  const credentialId = arrayBufferToBase64URL(credential.rawId);
+  
+  return {
+    credentialId,
+    publicKey, // base64URL encoded, DER format - DO NOT CONVERT
+  };
+}
+```
+
+## Creating Passkey Wallets
+
+### Pure Passkey Wallet (Type 3)
+
+```typescript
+// After registering passkey
+const { credentialId, publicKey } = await registerPasskey(userId, userName);
+
+// Create wallet with passkey
+const wallet = await client.createWallet({
+  walletCustody: CustodyType.PASSKEY_VALIDATOR,
+  salt: `user-${userId}`,
+  passkeyPubKey: [publicKey] // Keep in base64URL DER format!
+});
+```
+
+### Hybrid Passkey Wallet (Type 2)
+
+```typescript
+const wallet = await client.createWallet({
+  walletCustody: CustodyType.ECDSA_PASSKEY_VALIDATOR,
+  salt: `user-${userId}`,
+  passkeyPubKey: [publicKey] // Passkey as additional auth method
+});
+```
+
+## Signing Transactions
+
+### Complete Passkey Signing Flow
+
+```typescript
+async function signTransactionWithPasskey(
+  userOpHash: string,
+  credentialId: string
+): Promise<PasskeySignature> {
+  // 1. Convert hash to Uint8Array
+  const challengeBytes = hexToUint8Array(userOpHash);
+  
+  // 2. Create authentication options
+  const publicKeyOptions: PublicKeyCredentialRequestOptions = {
+    challenge: challengeBytes,
+    allowCredentials: [
+      {
+        id: base64UrlToBuffer(credentialId),
+        type: "public-key",
+        transports: ["internal", "usb", "nfc", "ble", "hybrid"],
+      },
+    ],
+    userVerification: "required" as UserVerificationRequirement,
+    timeout: 60000,
+  };
+  
+  // 3. Get credentials and sign
+  const credential = await navigator.credentials.get({
+    publicKey: publicKeyOptions
+  }) as PublicKeyCredential;
+  
+  if (!credential || !credential.response) {
+    throw new Error('Failed to sign with passkey');
+  }
+  
+  const response = credential.response as AuthenticatorAssertionResponse;
+  
+  // 4. Extract signature components
+  const authenticatorData = arrayBufferToHex(response.authenticatorData);
+  let clientDataJSON = new TextDecoder().decode(response.clientDataJSON);
+  
+  // 5. Clean clientDataJSON
+  const clientData = JSON.parse(clientDataJSON);
+  delete clientData.other_keys_can_be_added_here;
+  clientDataJSON = JSON.stringify(clientData);
+  
+  // 6. Parse DER signature
+  const signatureArray = new Uint8Array(response.signature);
+  const { r, s } = parseDERSignature(signatureArray);
+  
+  return {
+    authenticatorData,
+    clientDataJSON,
+    r: r.toString(),
+    s: s.toString()
+  };
+}
+```
+
+## Helper Functions
+
+```typescript
+function hexToUint8Array(hex: string): Uint8Array {
+  return new Uint8Array(
+    hex.slice(2).match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))
+  );
+}
+
+function arrayBufferToHex(buffer: ArrayBuffer): string {
+  return '0x' + Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function base64UrlToBuffer(base64url: string): ArrayBuffer {
+  const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) {
+    bytes[i] = bin.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+function parseDERSignature(derSignature: Uint8Array): { r: bigint; s: bigint } {
+  let offset = 4;
+  const rLength = derSignature[offset - 1];
+  let r = derSignature.slice(offset, offset + rLength);
+  if (r[0] === 0) r = r.slice(1);
+  
+  offset += rLength + 2;
+  const sLength = derSignature[offset - 1];
+  let s = derSignature.slice(offset, offset + sLength);
+  if (s[0] === 0) s = s.slice(1);
+  
+  return {
+    r: BigInt('0x' + Array.from(r).map(b => b.toString(16).padStart(2, '0')).join('')),
+    s: BigInt('0x' + Array.from(s).map(b => b.toString(16).padStart(2, '0')).join(''))
+  };
+}
+```
+
+## Encoding Passkey Signatures
+
+Before sending to the API, encode signatures:
+
+```typescript
+import { encodeAbiParameters } from 'viem';
+
+function encodePasskeySignature(sig: PasskeySignature): `0x${string}` {
+  return encodeAbiParameters(
+    [{
+      type: 'tuple', components: [
+        { type: 'bytes' },      // authenticatorData
+        { type: 'string' },     // clientDataJSON
+        { type: 'uint256' },    // challenge (23)
+        { type: 'uint256' },    // type (1)
+        { type: 'uint256' },    // r
+        { type: 'uint256' }     // s
+      ]
+    }],
+    [[
+      sig.authenticatorData,
+      sig.clientDataJSON,
+      BigInt(23),
+      BigInt(1),
+      BigInt(sig.r),
+      BigInt(sig.s)
+    ]]
+  ) as `0x${string}`;
+}
+```
+
+## Complete Transaction Flow
+
+```typescript
+async function executeWithPasskey(
+  salt: string,
+  credentialId: string,
+  operation: Operation
+) {
+  // 1. Build UserOperations
+  const result = await smartWallet.buildUserOperations([{
+    account: {
+      walletCustody: CustodyType.PASSKEY_VALIDATOR,
+      salt,
+      publicKeys: [publicKey]
+    },
+    operations: [operation],
+    settings: {}
+  }], [], []);
+  
+  // 2. Sign each UserOp hash with passkey
+  const passkeySignatures = await Promise.all(
+    result.userOps.map(userOp => 
+      signTransactionWithPasskey(userOp.userOpHash, credentialId)
+    )
+  );
+  
+  // 3. Encode signatures
+  const encodedSignatures = passkeySignatures.map(encodePasskeySignature);
+  
+  // 4. Execute
+  const response = await smartWallet.provideSignaturesAndRequestSendUserOperations(
+    result.userOps,
+    result.accessList,
+    encodedSignatures
+  );
+  
+  return response;
+}
+```
+
+## Multiple Passkeys
+
+Support multiple passkeys for backup:
+
+```typescript
+// Register multiple passkeys
+const passkey1 = await registerPasskey(userId, 'Device 1');
+const passkey2 = await registerPasskey(userId, 'Device 2');
+const passkey3 = await registerPasskey(userId, 'Device 3');
+
+// Create wallet with all passkeys
+const wallet = await client.createWallet({
+  walletCustody: CustodyType.PASSKEY_VALIDATOR,
+  salt: `user-${userId}`,
+  passkeyPubKey: [
+    passkey1.publicKey,
+    passkey2.publicKey,
+    passkey3.publicKey
+  ]
+});
+
+// Use any registered passkey to sign
+const signature = await signTransactionWithPasskey(
+  userOpHash,
+  passkey1.credentialId // or passkey2, passkey3
+);
+```
+
+## Best Practices
+
+1. **Always Enable UV Flag**: Required for security
+2. **Use P-256 Curve**: ES256 algorithm required
+3. **Keep DER Format**: Don't convert public key format
+4. **Multiple Passkeys**: Register backup passkeys
+5. **Store Credential IDs**: Keep credentialId for each passkey
+6. **Handle Errors**: Network issues can interrupt signing
+7. **User Feedback**: Show loading during signing
+
+## Common Issues
+
+### Public Key Format
+
+**Error**: "Invalid public key format"
+
+**Solution**: Keep public key in base64URL DER format. Do NOT convert:
+
+```typescript
+// ❌ Wrong
+const publicKey = JSON.parse(publicKeyString);
+
+// ✅ Correct
+const publicKey = extractedPublicKey; // Keep as-is from credential
+```
+
+### Signature Parsing
+
+**Error**: "Invalid signature"
+
+**Solution**: Ensure proper DER parsing:
+
+```typescript
+// ✅ Correct
+const { r, s } = parseDERSignature(response.signature);
+// Remove leading zeros if present
+```
+
+## Next Steps
+
+- **[Passkey Execution](/docs/transaction-execution/passkey-execution)** - Detailed execution guide
+- **[Multisig Wallets](/docs/advanced/multisig)** - Combine with multisig
+- **[Troubleshooting](/docs/advanced/troubleshooting)** - Common issues
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <div className="text-blue-800">
+    <strong>🔐 Passwordless Future:</strong> Passkey wallets provide the best user experience with biometric security.
+  </div>
+</div>
+

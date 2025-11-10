@@ -1,0 +1,134 @@
+---
+title: Documentação Interativa da API
+description: Teste a API MSA diretamente no seu navegador com nossa documentação interativa powered by Scalar.
+---
+
+import { ScalarAPI } from '../../components/ScalarAPI';
+
+# Documentação Interativa da API
+
+Explore e teste os endpoints da API MSA diretamente no seu navegador. Esta documentação interativa é powered by Scalar e fornece uma visão abrangente de todos os endpoints disponíveis, schemas de request/response e exemplos.
+
+## Recursos
+
+- **Experimente**: Execute chamadas reais da API diretamente da documentação
+- **Configuração de Autenticação**: Configure suas credenciais HSM/MPC para testes
+- **Exemplos Request/Response**: Veja exemplos em tempo real em múltiplos formatos
+- **Validação de Schema**: Validação automática de payloads de request
+- **Exemplos Multi-Linguagem**: Amostras de código em cURL, JavaScript, Python e mais
+
+## Como Começar
+
+1. **Configure suas credenciais** na seção de autenticação
+2. **Escolha um endpoint** da navegação lateral
+3. **Preencha os parâmetros necessários** usando os formulários interativos
+4. **Execute a solicitação** e veja respostas em tempo real
+
+<div className="mt-8">
+  <ScalarAPI />
+</div>
+
+## Navegação Rápida
+
+### Gerenciamento de Carteiras
+- **POST /predict** - Prever endereços de carteira antes da criação
+- **POST /create** - Implantar novas carteiras Account Abstraction
+- **POST /check** - Verificar existência e status da carteira
+
+### Execução de Transações
+- **POST /execute** - Executar operações com parâmetros legíveis
+- **POST /executeEncoded** - Executar UserOperations pré-codificadas
+- **POST /executePasskey** - Executar com validação passkey
+- **POST /estimateGas** - Estimar custos de gas para operações
+
+### Interação com Contratos
+- **POST /read** - Ler estado de smart contract
+- **POST /receipt** - Obter recibos de transação
+- **POST /filterEvent** - Filtrar eventos da blockchain
+- **POST /getEvents** - Recuperar eventos específicos
+
+### Utilitários
+- **POST /sign** - Assinar mensagens arbitrárias
+- **POST /getSigner** - Obter informações do signatário
+- **POST /unstuck** - Resolver transações travadas
+- **POST /passkeyHash** - Gerar hashes passkey
+
+### Gerenciamento
+- **POST /transactSigner** - Transações diretas HSM/MPC
+- **POST /addEvent** - Adicionar ABIs de eventos personalizados
+- **POST /addError** - Adicionar ABIs de erros personalizados
+
+## Limites de Taxa
+
+A API MSA implementa limitação de taxa para garantir uso justo:
+
+| Nível | Solicitações por Minuto | Solicitações por Hora |
+|-------|--------------------------|-----------------------|
+| Gratuito | 60 | 1.000 |
+| Pro | 300 | 10.000 |
+| Empresarial | 1.000 | 50.000 |
+
+## Códigos de Erro
+
+Códigos de status HTTP comuns e seus significados:
+
+| Código | Status | Descrição |
+|--------|--------|-----------|
+| 200 | OK | Solicitação bem-sucedida |
+| 400 | Bad Request | Parâmetros de solicitação inválidos |
+| 401 | Unauthorized | Credenciais de autenticação inválidas |
+| 422 | Unprocessable Entity | Solicitação válida mas execução falhou |
+| 429 | Too Many Requests | Limite de taxa excedido |
+| 500 | Internal Server Error | Erro do lado do servidor |
+
+## Configurações de Rede
+
+### Redes Suportadas
+
+| Rede | Chain ID | Endpoint RPC |
+|------|----------|--------------|
+| Polygon Amoy (Testnet) | 80002 | `https://rpc-amoy.polygon.technology/` |
+| Polygon Mainnet | 137 | `https://polygon-rpc.com/` |
+| Base Sepolia (Testnet) | 84532 | `https://sepolia.base.org/` |
+| Base Mainnet | 8453 | `https://mainnet.base.org/` |
+
+### Endereços de Contratos
+
+Entre em contato com nossa equipe para obter os endereços de contratos mais recentes em cada rede suportada.
+
+## Exemplos de Autenticação
+
+### Configuração HSM
+```json
+{
+  "signer": {
+    "clientId": "seu-client-id-fireblocks",
+    "versionId": "1"
+  }
+}
+```
+
+### Configuração MPC
+```json
+{
+  "signer": {
+    "clientId": "seu-client-id-fireblocks",
+    "assetId": "ETH"
+  }
+}
+```
+
+## Precisa de Ajuda?
+
+- **Documentação**: Navegue pelos guias detalhados em nossa documentação
+- **Suporte**: Entre em contato com nossa equipe para assistência técnica
+- **Comunidade**: Junte-se à nossa comunidade de desenvolvedores para discussões
+- **Status**: Verifique nossa página de status para disponibilidade do serviço
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <div className="text-blue-800">
+    <strong>💡 Pro Tip:</strong> Use the interactive documentation to understand the API before integrating it into your application. You can export your successful requests as code snippets for your preferred programming language.
+  </div>
+</div> 

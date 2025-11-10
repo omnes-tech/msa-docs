@@ -1,3 +1,22 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+
+/* Fix sidebar and content spacing */
+@media (min-width: 1024px) {
+  /* When sidebar is open (has width), add proper padding to content */
+  .md\:\[--fd-sidebar-width\:286px\] ~ main,
+  .md\:\[--fd-sidebar-width\:268px\] ~ main {
+    padding-left: 1.5rem !important;
+  }
+
+  /* When sidebar is closed (width 0), no padding needed */
+  .md\:\[--fd-sidebar-width\:0px\] ~ main {
+    padding-left: 0 !important;
+  }
+
+  /* Ensure main content always starts at the right position */
+  main {
+    transition: padding-left 0.2s ease;
+  }
+}

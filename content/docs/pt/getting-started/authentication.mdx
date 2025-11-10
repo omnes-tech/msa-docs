@@ -1,0 +1,446 @@
+---
+title: Autenticação e Configuração
+description: Aprenda como configurar autenticação HSM/MPC para operações seguras de carteira com a API MSA.
+---
+
+# Autenticação e Configuração
+
+A API MSA requer dois tipos de autenticação:
+
+1. **Chave da API**: Necessária para todas as solicitações da API para identificar sua conta e acessar endereços de contratos
+2. **Credenciais HSM/MPC**: Necessárias para operações de assinatura (ID do Cliente Fireblocks, ID da Versão ou ID do Ativo)
+
+Este guia explica como obter sua chave da API e configurar autenticação HSM/MPC para operações seguras de carteira.
+
+## Obtendo Sua Chave da API
+
+Antes de usar a API MSA, você precisa obter uma chave da API. Esta chave é usada para:
+- Autenticar suas solicitações à API MSA
+- Acessar endereços de contratos para redes suportadas
+- Usar o serviço de bundler remoto
+- Identificar sua conta para limitação de taxa e rastreamento de uso
+
+### Solicitar Sua Chave da API
+
+Para obter sua chave da API, você tem duas opções:
+
+1. **Agendar uma Reunião**: [Agende uma chamada de 30 minutos](https://calendly.com/omnes-blockchain/30min?month=2025-11) com nossa equipe
+2. **Enviar um Email**: [Entre em contato](mailto:gus@omnes.dev) para solicitar acesso
+
+Uma vez aprovado, você receberá sua chave da API por email. Armazene-a com segurança e nunca a commite no controle de versão.
+
+### Usando Sua Chave da API
+
+A chave da API é enviada no cabeçalho `X-API-Key` para todas as solicitações da API:
+
+```typescript
+// Solicitação REST API
+fetch('https://api.msa.omnes.tech/getbundleraddress', {
+  headers: {
+    'X-API-Key': 'sua-chave-api-aqui',
+    'Content-Type': 'application/json'
+  }
+});
+```
+
+Ao usar o SmartWallet SDK, passe a chave da API durante a inicialização:
+
+```typescript
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  'sua-chave-api-aqui', // Chave da API aqui
+  null,
+  false
+);
+```
+
+### Variáveis de Ambiente
+
+Armazene sua chave da API com segurança usando variáveis de ambiente:
+
+```bash
+# arquivo .env
+API_KEY=sua-chave-api-aqui
+PRIVATE_KEY=0x...
+RPC_URL=https://rpc-amoy.polygon.technology/
+```
+
+```typescript
+// No seu código
+const apiKey = process.env.API_KEY!;
+const rpcURL = process.env.RPC_URL!;
+const privateKey = process.env.PRIVATE_KEY!;
+```
+
+## Provedores de Assinatura
+
+A API MSA atualmente suporta:
+
+- **Fireblocks HSM**: Integração de Hardware Security Module
+- **Fireblocks MPC**: Assinatura Multi-Party Computation
+- **Assinatura de Chave Privada**: Assinatura direta de chave privada (para testes)
+- **Google Cloud KMS**: Assinatura GCP HSM
+- Mais provedores em breve
+
+## Integração Fireblocks
+
+### Pré-requisitos
+
+1. **Conta Fireblocks**: Workspace Fireblocks ativo
+2. **Credenciais da API**: ID do Cliente e ID da Versão (HSM) ou ID do Ativo (MPC)
+3. **Configuração de Rede**: Endpoints RPC adequados e endereços de contratos
+
+### Configuração HSM
+
+Para Fireblocks HSM, você precisará de:
+
+```typescript
+interface HSMConfig {
+  clientId: string;     // Seu ID do Cliente Fireblocks
+  versionId: string;    // Identificador da versão HSM
+}
+```
+
+### Configuração MPC
+
+Para Fireblocks MPC, você precisará de:
+
+```typescript
+interface MPCConfig {
+  clientId: string;     // Seu ID do Cliente Fireblocks
+  assetId: string;      // Identificador do ativo (ex: "ETH", "MATIC")
+}
+```
+
+## Estrutura de Configurações da API
+
+Toda solicitação da API MSA requer um objeto `settings` com autenticação e configuração de rede:
+
+```typescript
+interface Settings {
+  // Configuração de Rede
+  rpc: string;                    // Endpoint RPC da blockchain
+  factory: string;                // Endereço do contrato factory da carteira
+  validator: string;              // Endereço do contrato validador
+  entryPoint: string;             // Endereço do entry point EIP-4337
+  beaconAdminAddress: string;     // Endereço do contrato beacon admin
+  
+  // Contratos Opcionais
+  paymaster?: string;             // Contrato paymaster (opcional)
+  aggregator?: string;            // Agregador de assinatura (opcional)
+  beaconAdminCreationCode?: string; // Bytecode de criação do beacon
+  
+  // Configuração de Gas
+  percentUserOpGasOvershoot?: number;     // Buffer de gas UserOp (padrão: 50%)
+  percentTxGasOvershoot?: number;         // Buffer de gas da transação (padrão: 50%)
+  percentTxGasPriceOvershoot?: number;    // Buffer de preço de gas (padrão: 20%)
+  
+  // Autenticação HSM/MPC
+  signer: {
+    clientId: string;             // ID do Cliente Fireblocks
+    versionId?: string;           // Para HSM (necessário se não houver assetId)
+    assetId?: string;             // Para MPC (necessário se não houver versionId)
+  };
+  
+  // Recursos Opcionais
+  useABI?: Array<any>;            // ABI personalizado para decodificação de resposta
+}
+```
+
+## Configurações de Rede
+
+### Polygon Amoy Testnet
+
+```json
+{
+  "rpc": "https://rpc-amoy.polygon.technology/",
+  "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+  "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+  "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+  "beaconAdminCreationCode": "0x60a060405260405161059d38038061059d83398101604081905261002291610354565b..."
+}
+```
+
+### Polygon Mainnet
+
+```json
+{
+  "rpc": "https://polygon-rpc.com/",
+  "factory": "0x...",
+  "validator": "0x...",
+  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+  "beaconAdminAddress": "0x..."
+}
+```
+
+### Base Sepolia Testnet
+
+```json
+{
+  "rpc": "https://sepolia.base.org/",
+  "factory": "0x...",
+  "validator": "0x...",
+  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+  "beaconAdminAddress": "0x..."
+}
+```
+
+## Exemplo de Configuração de Autenticação
+
+### SmartWallet SDK
+
+```typescript
+import { GCPSigner, SmartWallet } from '@omnes/smartwallet-ts-sdk';
+
+// Configuração HSM (GCP)
+const hsmSigner = await GCPSigner.create(
+    googleCredentials, 
+    googleProjectId,
+    kmsLocationId, 
+    kmsKeyRingId, 
+    clientId, 
+    versionId
+);
+
+const smartWallet = await SmartWallet.create(
+    hsmSigner.signMessage,
+    hsmSigner.signMessage,
+    hsmSigner.getEVMAddress(),
+    rpcURL,
+    apiKey
+);
+
+// For MPC, use the appropriate signer from the SmartWallet SDK
+// The SDK handles authentication through the API key
+```
+
+### cURL Example
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/create" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [{
+      "walletCustody": 1,
+      "salt": "user@example.com"
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+      "beaconAdminCreationCode": "0x60a060405260405161059d...",
+      "signer": {
+        "clientId": "e94aecb1-5daf-47f3-948f-2a639a56baa6",
+        "versionId": "1"
+      }
+    }
+  }'
+```
+
+### Python Example
+
+```python
+import requests
+
+# Configuration
+config = {
+    "base_url": "https://api.msa.omnes.tech",
+    "settings": {
+        "rpc": "https://rpc-amoy.polygon.technology/",
+        "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+        "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+        "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+        "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+        "signer": {
+            "clientId": "e94aecb1-5daf-47f3-948f-2a639a56baa6",
+            "versionId": "1"
+        }
+    }
+}
+
+# Create wallet request
+response = requests.post(
+    f"{config['base_url']}/create",
+    json={
+        "accounts": [{
+            "walletCustody": 1,
+            "salt": "user@example.com"
+        }],
+        "settings": config["settings"]
+    }
+)
+```
+
+## Gas Configuration
+
+### UserOperation Gas Overshoot
+
+Adds a buffer to gas estimation for UserOperations to prevent failures:
+
+```typescript
+{
+  percentUserOpGasOvershoot: 60  // 60% buffer (recommended)
+}
+```
+
+### Transaction Gas Overshoot
+
+Adds a buffer to transaction gas estimation:
+
+```typescript
+{
+  percentTxGasOvershoot: 20  // 20% buffer (recommended)
+}
+```
+
+### Gas Price Overshoot
+
+Adds a buffer to gas price to ensure transaction inclusion:
+
+```typescript
+{
+  percentTxGasPriceOvershoot: 20  // 20% buffer (recommended)
+}
+```
+
+## Security Best Practices
+
+### 1. Environment Variables
+
+Never hardcode credentials in your application:
+
+```bash
+# .env file
+MSA_CLIENT_ID=e94aecb1-5daf-47f3-948f-2a639a56baa6
+MSA_VERSION_ID=1
+MSA_RPC_URL=https://rpc-amoy.polygon.technology/
+```
+
+```typescript
+// Using SmartWallet SDK
+import { PKSigner, SmartWallet } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+    signer.signMessage,
+    signer.signMessage,
+    signer.getEVMAddress(),
+    process.env.MSA_RPC_URL!,
+    apiKey
+);
+```
+
+### 2. Network Validation
+
+Always validate network configurations:
+
+```typescript
+const SUPPORTED_NETWORKS = {
+  80002: { // Polygon Amoy
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    // ... other addresses
+  },
+  137: { // Polygon Mainnet
+    rpc: 'https://polygon-rpc.com/',
+    factory: '0x...',
+    // ... other addresses
+  }
+};
+
+function getNetworkConfig(chainId: number) {
+  const config = SUPPORTED_NETWORKS[chainId];
+  if (!config) {
+    throw new Error(`Unsupported network: ${chainId}`);
+  }
+  return config;
+}
+```
+
+### 3. Request Timeout
+
+Set appropriate timeouts for API requests:
+
+```typescript
+// Using SmartWallet SDK
+import { PKSigner, SmartWallet } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+    signer.signMessage,
+    signer.signMessage,
+    signer.getEVMAddress(),
+    rpcURL,
+    apiKey
+);
+```
+
+## Error Handling
+
+### Common Authentication Errors
+
+| Error | Description | Solution |
+|-------|-------------|----------|
+| `Invalid client ID` | Fireblocks client ID is incorrect | Verify your Fireblocks credentials |
+| `Version not found` | HSM version doesn't exist | Check your version ID |
+| `Asset not supported` | MPC asset not available | Use supported asset ID |
+| `Network connection failed` | RPC endpoint unreachable | Verify RPC URL and network status |
+
+### Example Error Handling
+
+```typescript
+try {
+  const result = await client.createWallet({
+    walletCustody: 1,
+    salt: "user@example.com"
+  });
+  console.log('Wallet created:', result);
+} catch (error) {
+  if (error.code === 'INVALID_CLIENT_ID') {
+    console.error('Please check your Fireblocks credentials');
+  } else if (error.code === 'NETWORK_ERROR') {
+    console.error('Network connection failed, please try again');
+  } else {
+    console.error('Unexpected error:', error.message);
+  }
+}
+```
+
+## Testing Your Setup
+
+Verify your authentication setup with a simple wallet prediction:
+
+```typescript
+// Test prediction (doesn't require signing)
+const prediction = await client.predictWallet({
+  walletCustody: 1,
+  salt: "test@example.com"
+});
+
+console.log('Predicted wallet address:', prediction.walletAddress);
+```
+
+## Next Steps
+
+Once your authentication is configured:
+
+1. **[Create Your First Wallet](/docs/getting-started/quick-start)** - Deploy a test wallet
+2. **[Explore Custody Types](/docs/wallet-management/custody-types)** - Learn about different security models
+3. **[Start Building](/docs/sdk/typescript-sdk)** - Integrate with your application
+
+---
+
+<div className="mt-8 p-4 bg-green-50 rounded-lg">
+  <div className="text-green-800">
+    <strong>✅ Pro Tip:</strong> Start with testnet environments and ECDSA_VALIDATOR custody type for initial testing before moving to production with advanced custody features.
+  </div>
+</div> 

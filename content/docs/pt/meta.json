@@ -1,0 +1,60 @@
+{
+  "title": "Documentação da API MSA",
+  "pages": [
+    "index",
+    {
+      "title": "Primeiros Passos",
+      "pages": [
+        "getting-started/introduction",
+        "getting-started/authentication",
+        "getting-started/quick-start"
+      ]
+    },
+    {
+      "title": "Gerenciamento de Carteiras",
+      "pages": [
+        "wallet-management/creating-wallets",
+        "wallet-management/predicting-addresses",
+        "wallet-management/checking-wallets",
+        "wallet-management/custody-types"
+      ]
+    },
+    {
+      "title": "Execução de Transações",
+      "pages": [
+        "transaction-execution/basic-execution",
+        "transaction-execution/encoded-execution",
+        "transaction-execution/passkey-execution",
+        "transaction-execution/gas-estimation"
+      ]
+    },
+    {
+      "title": "SDK",
+      "pages": [
+        "sdk/typescript-sdk"
+      ]
+    },
+    {
+      "title": "Exemplos de Integração",
+      "pages": [
+        "examples/javascript-examples",
+        "examples/python-examples",
+        "examples/curl-examples"
+      ]
+    },
+    {
+      "title": "Referência da API",
+      "pages": [
+        "api-reference/interactive-docs"
+      ]
+    },
+    {
+      "title": "Avançado",
+      "pages": [
+        "advanced/multisig",
+        "advanced/passkeys",
+        "advanced/troubleshooting"
+      ]
+    }
+  ]
+} 

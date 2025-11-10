@@ -1,0 +1,304 @@
+---
+title: Execução de Transações Codificadas
+description: Execute UserOperations pré-codificadas com a API MSA para controle avançado de transações.
+---
+
+# Execução de Transações Codificadas
+
+Execute UserOperations pré-codificadas para controle avançado sobre a execução de transações. Isso é útil para codificação personalizada de transações, assinaturas passkey e construção manual de UserOp.
+
+## Visão Geral
+
+O endpoint de execução codificada permite que você forneça UserOperations pré-codificadas com assinaturas. Isso dá controle total sobre a estrutura UserOperation e é essencial para:
+
+- Transações baseadas em passkey
+- Esquemas de assinatura personalizados
+- Agrupamento de transações pré-codificadas
+- Otimização avançada de gas
+
+## Execução Básica Codificada
+
+<Tabs items={["TypeScript", "Python", "cURL"]}>
+<Tab value="TypeScript">
+
+```typescript
+// Using API HTTP (fetch)
+const response = await fetch('https://api.msa.omnes.tech/executeEncoded', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    encodedUserOp: '0x0000000000000000000000000000000000000000...',
+    userOpHash: '0x3cf5cc53a628b6c0526ede4ab8fa72c217cf3789...',
+    walletCustody: 1 // ECDSA_VALIDATOR
+  })
+});
+
+const result = await response.json();
+
+console.log('Transaction hash:', result.txHash);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+def execute_encoded():
+    url = "https://api.msa.omnes.tech/executeEncoded"
+    
+    payload = {
+        "encodedUserOp": "0x0000000000000000000000000000000000000000...",
+        "userOpHash": "0x3cf5cc53a628b6c0526ede4ab8fa72c217cf3789...",
+        "walletCustody": 1
+    }
+    
+    response = requests.post(url, json=payload)
+    return response.json()
+
+execute_encoded()
+```
+
+</Tab>
+<Tab value="cURL">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/executeEncoded" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "encodedUserOp": "0x0000000000000000000000000000000000000000...",
+    "userOpHash": "0x3cf5cc53a628b6c0526ede4ab8fa72c217cf3789...",
+    "walletCustody": 1
+  }'
+```
+
+</Tab>
+</Tabs>
+
+## Construindo UserOperations com SmartWallet SDK
+
+Use o SmartWallet SDK para construir UserOperations:
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+import { toBytes, toHex } from 'viem';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  null, // Não assinar automaticamente o hash UserOp
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey
+);
+
+// Construir operações
+const operations: Operation = {
+  to: tokenAddress,
+  value: BigInt(0),
+  funcSignature: 'transfer(address,uint256)',
+  params: [recipient, amount]
+};
+
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1,
+    salt: 'user@example.com',
+    publicKeys: []
+  },
+  operations: [operations],
+  settings: {}
+}];
+
+// Build UserOperations (not signed yet)
+const result = await smartWallet.buildUserOperations(
+  accountOperations,
+  [],
+  []
+);
+
+// Sign UserOp hashes manually
+const signatures: `0x${string}`[] = [];
+for (const userOp of result.userOps) {
+  const signature = await signer.signMessage(toBytes(userOp.userOpHash));
+  signatures.push(toHex(signature) as `0x${string}`);
+}
+
+// Execute with signatures
+const response = await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  result.userOps,
+  result.accessList,
+  signatures,
+  [] // Operation settings
+);
+```
+
+## Fluxo de Execução Passkey
+
+Para execução baseada em passkey, você precisa:
+
+1. Construir UserOperations
+2. Extrair hashes UserOp
+3. Assinar com passkey (frontend)
+4. Codificar assinaturas passkey
+5. Executar com assinaturas codificadas
+
+```typescript
+// 1. Construir UserOperations
+const result = await smartWallet.buildUserOperations(accountOperations, [], []);
+
+// 2. Extrair hashes UserOp
+const userOpHashes = result.userOps.map(op => op.userOpHash);
+
+// 3. Assinar com passkey (frontend - veja passkey-execution.mdx)
+const passkeySignatures = await signWithPasskey(userOpHashes);
+
+// 4. Codificar assinaturas passkey
+import { encodeAbiParameters } from 'viem';
+
+const encodedSignatures = passkeySignatures.map(sig => {
+  return encodeAbiParameters(
+    [{
+      type: 'tuple', components: [
+        { type: 'bytes' },      // authenticatorData
+        { type: 'string' },     // clientDataJSON
+        { type: 'uint256' },    // challenge (23)
+        { type: 'uint256' },    // type (1)
+        { type: 'uint256' },    // r
+        { type: 'uint256' }     // s
+      ]
+    }],
+    [[
+      sig.authenticatorData,
+      sig.clientDataJSON,
+      BigInt(23),
+      BigInt(1),
+      BigInt(sig.r),
+      BigInt(sig.s)
+    ]]
+  );
+});
+
+// 5. Execute
+const response = await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  result.userOps,
+  result.accessList,
+  encodedSignatures
+);
+```
+
+## UserOperation Structure
+
+A PackedUserOperation contains:
+
+```typescript
+interface PackedUserOperation {
+  sender: Address;              // Wallet address
+  nonce: bigint;               // Nonce
+  initCode: `0x${string}`;      // Initialization code
+  callData: `0x${string}`;     // Function call data
+  accountGasLimits: `0x${string}`; // Gas limits
+  preVerificationGas: bigint;  // Pre-verification gas
+  gasFees: `0x${string}`;      // Gas fees
+  paymasterAndData: `0x${string}`; // Paymaster data
+  signature: `0x${string}`;     // Signature
+  userOpHash: `0x${string}`;   // UserOp hash
+  dependsOn: number;           // Dependency index
+}
+```
+
+## Formato de Resposta
+
+Mesmo que execução básica:
+
+```typescript
+interface ExecutionResult {
+  status: number;
+  txHash: string;
+  gasUsed: number;
+  effectiveGasPrice: string;
+  logs: any[];
+  errors: any[];
+  returnData: any[];
+}
+```
+
+## Casos de Uso
+
+### 1. Esquemas de Assinatura Personalizados
+
+```typescript
+// Construir UserOp
+const result = await smartWallet.buildUserOperations(accountOperations, [], []);
+
+// Aplicar lógica de assinatura personalizada
+const customSignatures = result.userOps.map(userOp => {
+  // Sua lógica de assinatura personalizada
+  return customSign(userOp.userOpHash);
+});
+
+// Executar com assinaturas personalizadas
+await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  result.userOps,
+  result.accessList,
+  customSignatures
+);
+```
+
+### 2. Pre-encoding for Batch Operations
+
+```typescript
+// Build multiple UserOps
+const userOps = await Promise.all(
+  accounts.map(account => 
+    smartWallet.buildUserOperations([{
+      account: { ...account },
+      operations: [operation],
+      settings: {}
+    }], [], [])
+  )
+);
+
+// Encode all UserOps
+const encodedUserOps = userOps.map(result => encodeUserOp(result.userOps[0]));
+
+// Execute all at once
+await executeBatch(encodedUserOps);
+```
+
+### 3. Gas Optimization
+
+```typescript
+// Build UserOp
+const result = await smartWallet.buildUserOperations(accountOperations, [], []);
+
+// Analyze and optimize gas
+const optimizedUserOps = optimizeGas(result.userOps);
+
+// Sign optimized UserOps
+const signatures = await signUserOps(optimizedUserOps);
+
+// Execute optimized
+await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  optimizedUserOps,
+  result.accessList,
+  signatures
+);
+```
+
+## Próximos Passos
+
+- **[Execução Passkey](/docs/transaction-execution/passkey-execution)** - Guia detalhado de execução passkey
+- **[Estimativa de Gas](/docs/transaction-execution/gas-estimation)** - Otimize custos de transação
+- **[Execução Básica](/docs/transaction-execution/basic-execution)** - Padrões de execução padrão
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <div className="text-blue-800">
+    <strong>💡 Advanced Control:</strong> Encoded execution gives you full control over UserOperations. Use it for custom signature schemes, passkey integration, and advanced optimization.
+  </div>
+</div>
+

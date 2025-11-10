@@ -1,0 +1,671 @@
+---
+title: Guia de Início Rápido
+description: Crie sua primeira carteira Account Abstraction em 5 minutos com a API MSA.
+---
+
+# Guia de Início Rápido
+
+Este guia irá orientá-lo na criação de sua primeira carteira Account Abstraction usando a API MSA. Você aprenderá o fluxo de trabalho essencial e verá exemplos práticos em múltiplas linguagens de programação.
+
+## Pré-requisitos
+
+Antes de começar, certifique-se de ter:
+
+1. **Chave da API**: Sua chave da API MSA (obtenha em [Entre em Contato](/docs#contact-us))
+2. **Credenciais de Assinatura**: Uma das seguintes:
+   - **Chave Privada** (para teste): Sua chave privada Ethereum
+   - **HSM Fireblocks**: ID do Cliente e ID da Versão
+   - **MPC Fireblocks**: ID do Cliente e ID do Ativo
+   - **Google Cloud KMS**: Credenciais GCP e informações da chave
+3. **Acesso à Rede**: Endpoint RPC para sua rede alvo
+4. **API Base URL**: `https://api.msa.omnes.tech`
+
+### Passo 0: Obtenha Sua Chave da API
+
+Se você ainda não tem uma chave da API:
+
+1. [Agende uma reunião](https://calendly.com/omnes-blockchain/30min?month=2025-11) com nossa equipe, ou
+2. [Envie-nos um email](mailto:gus@omnes.dev) para solicitar acesso
+
+Assim que receber sua chave da API, armazene-a com segurança:
+
+```bash
+# arquivo .env
+API_KEY=sua-chave-api-aqui
+PRIVATE_KEY=0x1234... # Apenas para testes
+RPC_URL=https://rpc-amoy.polygon.technology/
+```
+
+## Passo 1: Inicializar o SDK
+
+Primeiro, configure seu ambiente e inicialize o SDK com sua chave da API e signatário.
+
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
+
+### Usando SmartWallet SDK (Recomendado)
+
+```typescript
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+// Load environment variables
+const apiKey = process.env.API_KEY!;
+const rpcURL = process.env.RPC_URL!;
+const privateKey = process.env.PRIVATE_KEY!; // For testing only
+
+// Create a signer
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+
+// Initialize SmartWallet with API key
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,           // Message sign method
+  signer.signMessage,           // UserOp hash sign method
+  signer.getEVMAddress(),       // Signer address
+  rpcURL,                       // RPC endpoint
+  apiKey,                       // Your API key (required!)
+  null,                         // Contracts (null = fetch from API)
+  false                         // Use remote bundler
+);
+
+console.log('SmartWallet initialized successfully!');
+```
+
+### Usando API HTTP (fetch)
+
+```typescript
+// Using API HTTP (fetch) for operations not covered by SmartWallet SDK
+const response = await fetch('https://api.msa.omnes.tech/create', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': process.env.API_KEY! // API key for authentication
+  },
+  body: JSON.stringify({
+    accounts: [{
+      walletCustody: 1, // ECDSA_VALIDATOR
+      salt: 'user@example.com'
+    }],
+    settings: {
+      rpc: 'https://rpc-amoy.polygon.technology/',
+      factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+      validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618',
+      signer: {
+        clientId: process.env.FIREBLOCKS_CLIENT_ID!,
+        versionId: process.env.FIREBLOCKS_VERSION_ID!
+      }
+    }
+  })
+});
+
+const result = await response.json();
+```
+
+</Tab>
+<Tab value="REST API">
+
+```bash
+# Defina sua chave da API como variável de ambiente
+export API_KEY="your-api-key-here"
+
+# Testar conexão da API
+curl -X GET "https://api.msa.omnes.tech/getbundleraddress" \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+</Tab>
+</Tabs>
+
+## Passo 2: Prever Endereço da Carteira
+
+Preveja o endereço da carteira antes de implantar. Isso é útil para financiar a carteira antes da criação.
+
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations } from '@omnes/smartwallet-ts-sdk';
+
+// Initialize (as shown in Step 1)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey,
+  null,
+  false
+);
+
+// Predict wallet address
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1, // ECDSA_VALIDATOR
+    salt: "user@example.com",
+    publicKeys: [] // Empty for ECDSA
+  },
+  operations: [], // No operations needed for prediction
+  settings: {}
+}];
+
+// Get predicted address
+const predictedAddress = smartWallet.predictWalletAddress("user@example.com");
+console.log('Predicted wallet address:', predictedAddress);
+```
+
+</Tab>
+<Tab value="REST API">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/predict" \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [{
+      "walletCustody": 1,
+      "salt": "user@example.com"
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
+    }
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "predictions": [{
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "salt": "user@example.com",
+    "walletCustody": 1
+  }]
+}
+```
+
+</Tab>
+</Tabs>
+
+**Expected Response:**
+```json
+{
+  "predictions": [{
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "salt": "user@example.com",
+    "walletCustody": 1
+  }]
+}
+```
+
+## Passo 3: Financiar a Carteira (Opcional)
+
+Para que a criação da carteira tenha sucesso, o endereço previsto precisa de tokens nativos suficientes para pagar o gas. Você pode:
+
+1. **Enviar tokens** para o endereço previsto de outra carteira
+2. **Usar um paymaster** para patrocinar a transação
+3. **Financiar via faucet** (apenas testnet)
+
+```bash
+# Exemplo: Enviar 0.1 MATIC para o endereço previsto
+# (Substitua com o endereço real da carteira do Passo 1)
+cast send 0x28097eF2268B553783D9c32A33ECb1bB78B209F3 \
+  --value 0.1ether \
+  --rpc-url https://rpc-amoy.polygon.technology/
+```
+
+## Passo 4: Criar a Carteira
+
+Implante a carteira. Isso requer credenciais de assinatura (chave privada para testes, ou HSM/MPC para produção).
+
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+
+// Initialize SmartWallet (from Step 1)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey,
+  null,
+  false // Use remote bundler (requires API key)
+);
+
+// Create wallet operation
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1, // ECDSA_VALIDATOR
+    salt: "user@example.com",
+    publicKeys: []
+  },
+  operations: [], // Empty operations array = just create wallet
+  settings: {}
+}];
+
+// Create wallet using remote bundler
+const result = await smartWallet.buildAndRequestSendUserOperations(
+  accountOperations,
+  [], // useABI
+  []  // additional signers
+);
+
+console.log('Wallet created!');
+console.log('Transaction hash:', result.txHash);
+console.log('Status:', result.status === 1 ? 'Success' : 'Failed');
+```
+
+</Tab>
+<Tab value="REST API">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/create" \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [{
+      "walletCustody": 1,
+      "salt": "user@example.com"
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+      "beaconAdminCreationCode": "0x60a060405260405161059d...",
+      "signer": {
+        "clientId": "your-fireblocks-client-id",
+        "versionId": "1"
+      }
+    }
+  }'
+```
+
+**Note**: For REST API, you can also use private key signing by providing the private key in the signer configuration, but this is **not recommended for production**.
+
+</Tab>
+</Tabs>
+
+**Expected Response:**
+```json
+{
+  "status": 1,
+  "txHash": "0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938",
+  "gasUsed": 549731,
+  "effectiveGasPrice": "1136849215",
+  "returnData": [{
+    "0": {
+      "salt": "user@example.com",
+      "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+    }
+  }]
+}
+```
+
+## Passo 5: Verificar Criação da Carteira
+
+Verifique se a carteira foi criada com sucesso:
+
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
+
+```typescript
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+// Initialize SmartWallet (from Step 1)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey,
+  null,
+  false
+);
+
+// Verify wallet exists
+const accounts = await smartWallet.checkAccounts(
+  ["user@example.com"], // Salts
+  []                    // Wallet addresses (empty for salt-based check)
+);
+
+const account = accounts[0];
+if (account?.exists) {
+  console.log('✅ Wallet exists!');
+  console.log('Wallet address:', account.wallet);
+} else {
+  console.log('❌ Wallet does not exist yet');
+}
+```
+
+</Tab>
+<Tab value="REST API">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/check" \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [{
+      "walletCustody": 1,
+      "salt": "user@example.com"
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
+    }
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "results": [{
+    "exists": true,
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "salt": "user@example.com",
+    "walletCustody": 1
+  }]
+}
+```
+
+</Tab>
+</Tabs>
+
+## Passo 6: Executar Sua Primeira Transação
+
+Execute uma transação simples da carteira. Vamos aprovar um token ERC-20:
+
+<Tabs items={["TypeScript SDK", "REST API"]}>
+<Tab value="TypeScript SDK">
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+
+// Initialize SmartWallet (from Step 1)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  signer.signMessage,
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey,
+  null,
+  false
+);
+
+// Define the operation
+const operation: Operation = {
+  to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Token contract address
+  value: BigInt(0), // No ETH sent
+  funcSignature: "approve(address,uint256)",
+  params: [
+    "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff", // Spender address
+    BigInt("1000000000000000000") // Amount (1 token, 18 decimals)
+  ]
+};
+
+// Create account operations
+const accountOperations: AccountOperations[] = [{
+  account: {
+    walletCustody: 1,
+    salt: "user@example.com",
+    publicKeys: []
+  },
+  operations: [operation],
+  settings: {}
+}];
+
+// Execute transaction
+const result = await smartWallet.buildAndRequestSendUserOperations(
+  accountOperations,
+  [], // useABI
+  []  // additional signers
+);
+
+console.log('Transaction executed!');
+console.log('Transaction hash:', result.txHash);
+console.log('Status:', result.status === 1 ? 'Success' : 'Failed');
+```
+
+</Tab>
+<Tab value="REST API">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/execute" \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operations": [{
+      "walletCustody": 1,
+      "salt": "user@example.com",
+      "to": "0x097d4Aed5924e2172451973153Fc0e03407eD1F9",
+      "funcSignature": "approve(address,uint256)",
+      "funcParams": [
+        "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff",
+        "1000000000000000000"
+      ]
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+      "signer": {
+        "clientId": "your-fireblocks-client-id",
+        "versionId": "1"
+      }
+    }
+  }'
+```
+
+</Tab>
+</Tabs>
+
+## Exemplo Completo do Fluxo de Trabalho
+
+Here's a complete end-to-end example using the SmartWallet SDK:
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+async function completeWalletWorkflow() {
+  // Load configuration
+  const apiKey = process.env.API_KEY!;
+  const rpcURL = process.env.RPC_URL!;
+  const privateKey = process.env.PRIVATE_KEY!;
+  const userSalt = `user-${Date.now()}@example.com`;
+
+  try {
+    // Step 1: Initialize SmartWallet
+    console.log('🔧 Initializing SmartWallet...');
+    const signer = await PKSigner.create(privateKey as `0x${string}`);
+    const smartWallet = await SmartWallet.create(
+      signer.signMessage,
+      signer.signMessage,
+      signer.getEVMAddress(),
+      rpcURL,
+      apiKey,
+      null, // Contracts will be fetched from API using API key
+      false // Use remote bundler
+    );
+    console.log('✅ SmartWallet initialized');
+
+    // Step 2: Predict wallet address
+    console.log('🔮 Predicting wallet address...');
+    const predictedAddress = smartWallet.predictWalletAddress(userSalt);
+    console.log(`✅ Predicted address: ${predictedAddress}`);
+
+    // Step 3: Check if wallet exists
+    console.log('🔍 Checking wallet existence...');
+    const accountOperations: AccountOperations[] = [{
+      account: {
+        walletCustody: 1,
+        salt: userSalt,
+        publicKeys: []
+      },
+      operations: [],
+      settings: {}
+    }];
+    
+    // Check wallet existence using checkAccounts
+    const accounts = await smartWallet.checkAccounts([userSalt], []);
+    const walletExists = accounts[0]?.exists || false;
+    
+    if (walletExists) {
+      console.log('ℹ️ Wallet already exists');
+    } else {
+      console.log('ℹ️ Wallet does not exist, will create');
+    }
+
+    // Step 4: Create wallet (if needed)
+    if (!walletExists) {
+      console.log('🏗️ Creating wallet...');
+      const createResult = await smartWallet.buildAndRequestSendUserOperations(
+        accountOperations,
+        [],
+        []
+      );
+      console.log(`✅ Wallet created! Tx: ${createResult.txHash}`);
+      // Wait for confirmation
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+
+    // Step 5: Execute a transaction
+    console.log('⚡ Executing transaction...');
+    const operation: Operation = {
+      to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Token address
+      value: BigInt(0),
+      funcSignature: "approve(address,uint256)",
+      params: [
+        "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff", // Spender
+        BigInt("1000000000000000000") // Amount
+      ]
+    };
+
+    const executeOperations: AccountOperations[] = [{
+      account,
+      operations: [operation],
+      settings: {}
+    }];
+
+    const executeResult = await smartWallet.buildAndRequestSendUserOperations(
+      executeOperations,
+      [],
+      []
+    );
+    console.log(`✅ Transaction executed! Tx: ${executeResult.txHash}`);
+
+    return {
+      walletAddress: predictedAddress,
+      txHash: executeResult.txHash
+    };
+
+  } catch (error) {
+    console.error('❌ Error:', error);
+    throw error;
+  }
+}
+
+// Run the workflow
+completeWalletWorkflow()
+  .then(result => {
+    console.log('🎉 Workflow completed successfully!');
+    console.log('Result:', result);
+  })
+  .catch(error => {
+    console.error('💥 Workflow failed:', error);
+    process.exit(1);
+  });
+```
+
+**Environment Variables (.env):**
+```bash
+API_KEY=your-api-key-here
+PRIVATE_KEY=0x1234...
+RPC_URL=https://rpc-amoy.polygon.technology/
+```
+
+## Problemas Comuns e Soluções
+
+### 1. Insufficient Gas
+
+**Error**: Transaction fails with "insufficient funds"
+
+**Solution**: Ensure the predicted wallet address has enough native tokens:
+
+```typescript
+// Check balance before creating
+const balance = await provider.getBalance(walletAddress);
+console.log('Wallet balance:', ethers.utils.formatEther(balance));
+```
+
+### 2. Invalid API Key
+
+**Error**: "Invalid API key" or "Unauthorized"
+
+**Solution**: 
+- Verify your API key is correct: `echo $API_KEY`
+- Ensure the API key is included in the `X-API-Key` header for REST API requests
+- Verify your API key is passed to `SmartWallet.create()` when using the SDK
+- Request a new API key if needed: [Contact Us](/docs#contact-us)
+
+### 3. Invalid Client ID or Signing Credentials
+
+**Error**: "Invalid client ID" or authentication failure
+
+**Solution**: Verify your Fireblocks credentials:
+
+```bash
+# Check environment variables
+echo $FIREBLOCKS_CLIENT_ID
+echo $FIREBLOCKS_VERSION_ID
+```
+
+### 4. Network Connection Issues
+
+**Error**: "Network connection failed"
+
+**Solution**: Verify RPC endpoint and network status:
+
+```bash
+# Testar endpoint RPC
+curl -X POST https://rpc-amoy.polygon.technology/ \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+```
+
+## Próximos Passos
+
+Now that you've created your first wallet, explore more advanced features:
+
+1. **[Wallet Management](/docs/wallet-management/creating-wallets)** - Learn about different custody types
+2. **[Transaction Execution](/docs/transaction-execution/basic-execution)** - Explore batch operations and gas optimization
+3. **[SDK Integration](/docs/sdk/typescript-sdk)** - Build production applications
+4. **[API Reference](/docs/api-reference/interactive-docs)** - Try all endpoints interactively
+
+---
+
+<div className="mt-8 p-4 bg-green-50 rounded-lg">
+  <div className="text-green-800">
+    <strong>🎯 Congratulations!</strong> You've successfully created and used your first Account Abstraction wallet. The wallet address is deterministic based on your salt, so you can always recreate the same address.
+  </div>
+</div> 

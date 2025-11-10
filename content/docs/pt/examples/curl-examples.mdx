@@ -1,0 +1,219 @@
+---
+title: Exemplos cURL
+description: Exemplos completos de comandos cURL para testar e integrar a API MSA.
+---
+
+# Exemplos cURL
+
+Exemplos completos de cURL para testar e integrar a API MSA a partir da linha de comando.
+
+## Configuração
+
+```bash
+# Definir variáveis de ambiente
+export MSA_BASE_URL="https://api.msa.omnes.tech"
+export MSA_API_KEY="sua-chave-api-aqui"
+export RPC_URL="https://rpc-amoy.polygon.technology/"
+export FACTORY="0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4"
+export VALIDATOR="0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a"
+export ENTRY_POINT="0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
+export BEACON_ADMIN="0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618"
+export CLIENT_ID="seu-client-id"
+export VERSION_ID="1"
+```
+
+## Operações de Carteira
+
+### Prever Endereço de Carteira
+
+```bash
+curl -X POST "${MSA_BASE_URL}/predict" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"accounts\": [{
+      \"walletCustody\": 1,
+      \"salt\": \"user@example.com\"
+    }],
+    \"settings\": {
+      \"rpc\": \"${RPC_URL}\",
+      \"factory\": \"${FACTORY}\",
+      \"validator\": \"${VALIDATOR}\",
+      \"entryPoint\": \"${ENTRY_POINT}\",
+      \"beaconAdminAddress\": \"${BEACON_ADMIN}\"
+    }
+  }"
+```
+
+### Criar Carteira
+
+```bash
+curl -X POST "${MSA_BASE_URL}/create" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"accounts\": [{
+      \"walletCustody\": 1,
+      \"salt\": \"user@example.com\"
+    }],
+    \"settings\": {
+      \"rpc\": \"${RPC_URL}\",
+      \"factory\": \"${FACTORY}\",
+      \"validator\": \"${VALIDATOR}\",
+      \"entryPoint\": \"${ENTRY_POINT}\",
+      \"beaconAdminAddress\": \"${BEACON_ADMIN}\",
+      \"beaconAdminCreationCode\": \"0x60a060405260405161059d...\",
+      \"signer\": {
+        \"clientId\": \"${CLIENT_ID}\",
+        \"versionId\": \"${VERSION_ID}\"
+      }
+    }
+  }"
+```
+
+### Verificar Carteira
+
+```bash
+curl -X POST "${MSA_BASE_URL}/check" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"accounts\": [{
+      \"walletCustody\": 1,
+      \"salt\": \"user@example.com\"
+    }],
+    \"settings\": {
+      \"rpc\": \"${RPC_URL}\",
+      \"factory\": \"${FACTORY}\",
+      \"validator\": \"${VALIDATOR}\",
+      \"entryPoint\": \"${ENTRY_POINT}\",
+      \"beaconAdminAddress\": \"${BEACON_ADMIN}\"
+    }
+  }"
+```
+
+## Execução de Transações
+
+### Executar Transação
+
+```bash
+curl -X POST "${MSA_BASE_URL}/execute" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"operations\": [{
+      \"walletCustody\": 1,
+      \"salt\": \"user@example.com\",
+      \"to\": \"0x097d4Aed5924e2172451973153Fc0e03407eD1F9\",
+      \"funcSignature\": \"transfer(address,uint256)\",
+      \"funcParams\": [
+        \"0xRecipientAddress...\",
+        \"1000000000000000000\"
+      ]
+    }],
+    \"settings\": {
+      \"rpc\": \"${RPC_URL}\",
+      \"factory\": \"${FACTORY}\",
+      \"validator\": \"${VALIDATOR}\",
+      \"entryPoint\": \"${ENTRY_POINT}\",
+      \"beaconAdminAddress\": \"${BEACON_ADMIN}\",
+      \"signer\": {
+        \"clientId\": \"${CLIENT_ID}\",
+        \"versionId\": \"${VERSION_ID}\"
+      }
+    }
+  }"
+```
+
+## Scripts Auxiliares
+
+### Predict and Create Script
+
+```bash
+#!/bin/bash
+SALT="user@example.com"
+
+echo "1. Predicting wallet..."
+PREDICT=$(curl -s -X POST "${MSA_BASE_URL}/predict" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"accounts\": [{\"walletCustody\": 1, \"salt\": \"${SALT}\"}],
+    \"settings\": {
+      \"rpc\": \"${RPC_URL}\",
+      \"factory\": \"${FACTORY}\",
+      \"validator\": \"${VALIDATOR}\",
+      \"entryPoint\": \"${ENTRY_POINT}\",
+      \"beaconAdminAddress\": \"${BEACON_ADMIN}\"
+    }
+  }")
+
+WALLET=$(echo $PREDICT | jq -r '.predictions[0].wallet')
+echo "Predicted address: $WALLET"
+
+echo "2. Checking wallet..."
+CHECK=$(curl -s -X POST "${MSA_BASE_URL}/check" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"accounts\": [{\"walletCustody\": 1, \"salt\": \"${SALT}\"}],
+    \"settings\": {
+      \"rpc\": \"${RPC_URL}\",
+      \"factory\": \"${FACTORY}\",
+      \"validator\": \"${VALIDATOR}\",
+      \"entryPoint\": \"${ENTRY_POINT}\",
+      \"beaconAdminAddress\": \"${BEACON_ADMIN}\"
+    }
+  }")
+
+EXISTS=$(echo $CHECK | jq -r '.results[0].exists')
+
+if [ "$EXISTS" == "false" ]; then
+  echo "3. Creating wallet..."
+  CREATE=$(curl -s -X POST "${MSA_BASE_URL}/create" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"accounts\": [{\"walletCustody\": 1, \"salt\": \"${SALT}\"}],
+      \"settings\": {
+        \"rpc\": \"${RPC_URL}\",
+        \"factory\": \"${FACTORY}\",
+        \"validator\": \"${VALIDATOR}\",
+        \"entryPoint\": \"${ENTRY_POINT}\",
+        \"beaconAdminAddress\": \"${BEACON_ADMIN}\",
+        \"beaconAdminCreationCode\": \"0x60a060405260405161059d...\",
+        \"signer\": {
+          \"clientId\": \"${CLIENT_ID}\",
+          \"versionId\": \"${VERSION_ID}\"
+        }
+      }
+    }")
+  
+  TX_HASH=$(echo $CREATE | jq -r '.txHash')
+  echo "Wallet created: $TX_HASH"
+else
+  echo "Wallet already exists"
+fi
+```
+
+## Pretty Print with jq
+
+```bash
+# Pretty print JSON responses
+curl -X POST "${MSA_BASE_URL}/predict" \
+  -H "Content-Type: application/json" \
+  -d "{...}" | jq '.'
+
+# Extract specific fields
+curl -X POST "${MSA_BASE_URL}/predict" \
+  -H "Content-Type: application/json" \
+  -d "{...}" | jq -r '.predictions[0].wallet'
+```
+
+## Next Steps
+
+- **[JavaScript Examples](/docs/examples/javascript-examples)** - Browser-based HTTP examples
+- **[Python Examples](/docs/examples/python-examples)** - Python HTTP examples
+- **[TypeScript SDK](/docs/sdk/typescript-sdk)** - Type-safe SDK
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <div className="text-blue-800">
+    <strong>💡 Testing Tool:</strong> Use cURL to quickly test MSA API endpoints during development.
+  </div>
+</div>
+

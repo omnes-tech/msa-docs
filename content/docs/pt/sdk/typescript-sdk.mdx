@@ -1,0 +1,752 @@
+---
+title: SDK TypeScript
+description: Um SDK TypeScript abrangente para a API MSA com segurança de tipos completa e experiência moderna de desenvolvedor.
+---
+
+# SDK TypeScript
+
+O SmartWallet SDK fornece uma maneira moderna e segura para interagir com a API MSA. Construído com abordagem TypeScript-first, oferece controle completo sobre construção e assinatura de UserOperations.
+
+Para casos de uso avançados, a MSA fornece o **SmartWallet SDK** - um SDK de baixo nível que dá controle completo sobre construção e assinatura de UserOperations.
+
+## Instalação
+
+```bash
+npm install @omnes/smartwallet-ts-sdk
+```
+
+## Principais Recursos
+
+- ✅ **Controle Completo de UserOp**: Construa e assine UserOperations manualmente
+- ✅ **Múltiplos Signatários**: PKSigner, GCPSigner, MultisigSigner, PasskeySigner
+- ✅ **Bundler Próprio e Remoto**: Escolha sua estratégia de bundler
+- ✅ **Assinaturas Personalizadas**: Implemente sua própria lógica de assinatura
+- ✅ **Otimização de Gas**: Ajuste fino das configurações de gas
+
+## Configurações
+
+Este SDK é bastante flexível e aceita várias configurações diferentes:
+
+1. Configure diferentes métodos de assinatura de mensagens, como: chave privada, HSM (GCP/AWS), multisig e passkey.
+2. Deixe o SDK assinar o hash do userOp ou implemente código/personalizado para assiná-lo;
+3. Use bundler remoto ou próprio;
+
+### 1. Método de Assinatura de Mensagens
+
+O método de assinatura de mensagens assina as mensagens usadas ao criar uma nova conta e instalar seu validador. O SDK fornece vários métodos incorporados nos diferentes Signatários incluídos nele:
+
+- Chave privada (`PKSigner`) ✅
+- GCP HSM (`GCPSigner`) ✅
+- AWS HSM ❌
+- Multisig (`MultisigSigner`) ✅
+- Passkey (`PasskeySigner`) ⚠️ (um exemplo detalhado será dado posteriormente)
+
+Também planejamos suportar outros esquemas de signatário HSM, como:
+
+- Azure HSM
+- Oracle HSM
+
+Você também pode implementar um signatário personalizado. O único requisito é que siga a interface abaixo:
+
+```typescript
+interface Signer {
+    signMessage(hash: Uint8Array): Promise<Uint8Array>;
+    signTx(hashedTx: Uint8Array): Promise<Uint8Array>;
+}
+```
+
+Após criar seu signatário, você só precisa fornecê-lo ao criar o cliente SmartWallet:
+
+```typescript
+const smartWallet = await SmartWallet.create(
+    signer.signMessage, // método de assinatura de mensagens
+    signer.signMessage, // este é o método para assinar o hash do userOp.
+    signer.getEVMAddress(), // método regular definido para todos os signatários fornecidos pela biblioteca SmartWallet SDK
+    rpcURL,
+    apiKey
+);
+```
+
+### 2. Método de Assinatura do Hash UserOp
+
+Há situações onde você não quer usar o mesmo método de assinatura de mensagens para assinar o hash do userOp. Portanto, você pode especificar um método de assinatura diferente. Por exemplo, você pode querer ter uma chave privada master que assina as mensagens para criar a conta e permitir que outra chave privada assine o hash do userOp:
+
+```typescript
+const companySigner = await PKSigner.create(privateKey as `0x${string}`);
+const secondSigner = await PKSigner.create(privateKey as `0x${string}`);
+
+const smartWallet = await SmartWallet.create(
+    companySigner.signMessage, // método de assinatura de mensagens
+    secondSigner.signMessage, // este é o método para assinar o hash do userOp.
+    companySigner.getEVMAddress(), // método regular definido para todos os signatários fornecidos pela biblioteca SmartWallet SDK
+    rpcURL,
+    apiKey
+);
+```
+
+Há outra situação onde você não quer/precisa que o SDK assine o hash do userOp. Para isso, você pode primeiro gerar as UserOperations, assinar os hashes do userOp separadamente, e finalmente enviar as operações para a blockchain via bundler. Um bom exemplo para isso é usar passkey para assinar o hash do userOp, já que a assinatura precisa acontecer no frontend.
+
+Primeiro, você precisa recuperar a chave pública da passkey do usuário cuja operação você quer enviar para a blockchain.
+
+**Importante**: ao gerar a passkey, você precisa habilitar as flags UP e UV e usar a curva P-256. Abaixo estão as definições de opções que devem ser usadas ao registrar uma nova passkey:
+
+```typescript
+const publicKeyOptions = {
+    pubKeyCredParams: [
+        {
+            type: "public-key" as const,
+            alg: -7, // ES256 (P-256 curve)
+        },
+    ],
+    attestation: "direct" as AttestationConveyancePreference,
+    authenticatorSelection: {
+        authenticatorAttachment: "platform" as AuthenticatorAttachment, // Prefere autenticadores de plataforma (integrados ao computador)
+        residentKey: "required" as ResidentKeyRequirement,
+        requireResidentKey: true,
+        userVerification: "required" as UserVerificationRequirement, // UV flag
+    }
+}
+```
+
+**Nota**: a chave pública recuperada é codificada em base64URL e no formato DER. **MANTENHA ASSIM**! NÃO converta ou decodifique para nenhum outro formato. O SDK requer que a chave pública de uma passkey esteja nesta codificação e formato.
+
+Especifique as operações e gere as UserOperations. Vamos instanciar um signatário de chave privada e usar seu método `signMessage` para assinatura de mensagens de criação de conta:
+
+```typescript
+import { PKSigner, SmartWallet, OperationSettings, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+import { toBytes, toHex } from 'viem';
+
+// Carregar variáveis de configuração
+const privateKey = process.env.PRIVATE_KEY;
+const rpcURL = process.env.RPC_URL as string;
+const apiKey = process.env.API_KEY as string;
+
+// Criar um signatário (chave privada, GCP/AWS HSM, etc.)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+
+// construir uma operação do usuário
+const operations: Operation = {
+    to: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // Token USDC no Ethereum
+    value: BigInt(0), // SDK espera bigint. Valor a enviar em wei.
+    funcSignature: "transfer(address,uint256)", // assinatura de função como usada no Solidity.
+    params: [
+        "0xD84F7ac8aB9dB8a259244d629d9c539F2159e6EC",
+        100000000 // 100 USDC
+    ] // function parameters
+};
+
+const accountOperations: AccountOperations[] = [
+    {
+        account: {
+            walletCustody: 2, // Passkey custody
+            salt: "salt", // você pode usar qualquer salt que quiser para criar a conta
+            publicKeys: [retrievedPublicKey], // Chave(s) pública(s) da passkey, codificada(s) em base64URL e formato DER
+        },
+        operations: [operations],
+        settings: {} // Objeto de configurações vazio - SDK fornecerá padrões
+    }
+];
+```
+
+**Nota**: o `salt` determina o endereço final da sua carteira inteligente. Isso significa que você não pode reutilizar o salt se quiser criar uma nova carteira inteligente.
+
+Então, codificamos para UserOperations:
+
+```typescript
+const result = await smartWallet2.buildUserOperations(
+    accountOperations,
+    [], // useABI - você pode definir seu próprio ABI aqui. Isso é usado para analisar erros e eventos.
+    [] // signers - se houver mais de um signatário, você pode fornecer um array de endereços de signatários
+);
+```
+
+O `result` segue esta estrutura:
+
+```typescript
+{
+    userOps: PackedUserOperation[],
+    failedUserOps: PackedUserOperation[],
+    accessList: Address[]
+}
+```
+
+onde `PackedUserOperation` é:
+
+```typescript
+interface PackedUserOperation {
+    sender: Address;
+    nonce: bigint;
+    initCode: `0x${string}`;
+    callData: `0x${string}`;
+    accountGasLimits: `0x${string}`;
+    preVerificationGas: bigint;
+    gasFees: `0x${string}`;
+    paymasterAndData: `0x${string}`;
+    signature: `0x${string}`;
+    userOpHash: `0x${string}`;
+    dependsOn: number;
+}
+```
+
+Assine as UserOperations retornadas (`result.userOps`) usando a passkey registrada. Abaixo está um exemplo de como fazer isso no seu frontend:
+
+```typescript
+// Extrair userOpHashes dos userOps
+const userOpHashes: string[] = []
+if (userOps && result.userOps.length > 0) {
+    for (const userOp of userOps) {
+        if (userOp.userOpHash) {
+            userOpHashes.push(userOp.userOpHash)
+        }
+    }
+}
+
+// Função auxiliar para converter hex para Uint8Array
+function hexToUint8Array(hex: string): Uint8Array {
+    const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
+    const matches = cleanHex.match(/.{1,2}/g);
+    return new Uint8Array(matches ? matches.map(byte => parseInt(byte, 16)) : []);
+}
+
+// Função auxiliar para converter ArrayBuffer para hex
+function arrayBufferToHex(buffer: ArrayBuffer): string {
+    return '0x' + Array.from(new Uint8Array(buffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+// Função auxiliar para converter base64URL para ArrayBuffer
+function base64UrlToBuffer(base64url: string): ArrayBuffer {
+    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+interface PasskeySignature {
+    authenticatorData: string;
+    clientDataJSON: string;
+    r: string;
+    s: string;
+}
+
+const signedHashes: PasskeySignature[] = [];
+
+for (const hash of userOpHashes) {
+    // Converter string hex para Uint8Array para desafio
+    const challengeBytes = hexToUint8Array(hash);
+
+    // Criar opções de autenticação
+    const publicKeyOptions: PublicKeyCredentialRequestOptions = {
+        challenge: challengeBytes,
+        allowCredentials: [
+            {
+                id: base64UrlToBuffer(credentialId),
+                type: "public-key",
+                transports: ["internal", "usb", "nfc", "ble", "hybrid"],
+            },
+        ],
+        userVerification: "required" as UserVerificationRequirement,
+        timeout: 60000,
+    }
+
+    // Obter credenciais e assinar
+    const credential = await navigator.credentials.get({
+        publicKey: publicKeyOptions
+    }) as PublicKeyCredential
+
+    if (credential && credential.response) {
+        // Extrair os componentes da assinatura da resposta
+        const response = credential.response as AuthenticatorAssertionResponse;
+
+        // Extrair authenticatorData e clientDataJSON
+        const authenticatorData = arrayBufferToHex(response.authenticatorData);
+        let clientDataJSON = new TextDecoder().decode(response.clientDataJSON);
+
+        // Remover o campo demo do clientDataJSON
+        try {
+            const clientData = JSON.parse(clientDataJSON);
+            delete clientData.other_keys_can_be_added_here;
+            clientDataJSON = JSON.stringify(clientData);
+        } catch (e) {
+            console.warn("Failed to clean clientDataJSON:", e);
+        }
+        // Analisar a assinatura para extrair componentes r e s
+        const signatureArray = new Uint8Array(response.signature);
+
+        // Analisar assinatura DER para extrair r e s
+        // Esta é uma análise DER simplificada para assinaturas ECDSA
+        let rStart = 4; // Pular cabeçalho DER
+        let rLength = signatureArray[rStart - 1];
+        let r = signatureArray.slice(rStart, rStart + rLength);
+
+        // Remover zero à esquerda se presente (para números positivos)
+        if (r[0] === 0) {
+            r = r.slice(1);
+        }
+
+        let sStart = rStart + rLength + 2; // Pular para componente s
+        let sLength = signatureArray[sStart - 1];
+        let s = signatureArray.slice(sStart, sStart + sLength);
+
+        // Remover zero à esquerda se presente (para números positivos)
+        if (s[0] === 0) {
+            s = s.slice(1);
+        }
+
+        // Converter para strings big.Int
+        const rBigInt = BigInt('0x' + Array.from(r).map(b => b.toString(16).padStart(2, '0')).join(''));
+        const sBigInt = BigInt('0x' + Array.from(s).map(b => b.toString(16).padStart(2, '0')).join(''));
+
+        const passkeySignature: PasskeySignature = {
+            authenticatorData: authenticatorData,
+            clientDataJSON: clientDataJSON,
+            r: rBigInt.toString(),
+            s: sBigInt.toString()
+        };
+
+        signedHashes.push(passkeySignature);
+    }
+}
+```
+
+**Nota 1**: você precisa converter os hashes userOp recuperados de hex para array de bytes (`uint8` array) para que a assinatura retornada da passkey esteja no formato correto.
+
+**Nota 2**: você precisa lidar com os dados do autenticador retornados (`authenticatorData`), dados do cliente (`clientDataJSON`) e assinatura (`signature`):
+- `authenticatorData`: converter de array de bytes para string hex. O resultado deve ser algo como `0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000`;
+- `clientDataJSON`: de array de bytes para JSON stringificado (sem o campo `other_keys_can_be_added_here`). O resultado deve ser algo como `'{"type":"webauthn.get","challenge":"aGVsbG8gd2ViMw","origin":"http://localhost:3000","crossOrigin":false}'`;
+- `signature`: de array de bytes no formato DER para seus respectivos valores R e S.
+
+Agora podemos enviar as UserOperations para a blockchain:
+
+```typescript
+import { encodeAbiParameters, toHex } from 'viem';
+
+const encodedSignatures = request.signatures.map(sig => {
+    return encodeAbiParameters(
+        [
+            {
+                type: 'tuple', components: [
+                    { type: 'bytes' },
+                    { type: 'string' },
+                    { type: 'uint256' },
+                    { type: 'uint256' },
+                    { type: 'uint256' },
+                    { type: 'uint256' }
+                ]
+            }
+        ],
+        [
+            [
+                sig.authenticatorData,
+                sig.clientDataJSON,
+                BigInt(23), // always 23
+                BigInt(1), // always 1
+                BigInt(sig.r),
+                BigInt(sig.s)
+            ]
+        ]);
+});
+
+const response = await smartWallet.provideSignaturesAndRequestSendUserOperations(
+    result.userOps,
+    result.accessList,
+    encodedSignatures
+);
+
+console.log(response.txHash)
+```
+
+**Nota**: você precisa codificar a estrutura de assinatura da passkey para codificação ABI.
+
+A `response` segue esta estrutura:
+
+```typescript
+interface Response {
+    status: TxStatus;
+    txHash: Hash;
+    logs: Record<string, any>[];
+    cummulatedGasUsed: number;
+    gasUsed: number;
+    effectiveGasPrice: bigint;
+    errors: Record<string, any>[];
+    returnData: Record<string, any>[];
+    credits: number;
+}
+```
+
+### 3. Bundler
+
+Em termos de configurações de bundler, você pode usar tanto o bundler remoto quanto um bundler local/próprio. Você pode usar o bundler remoto apenas se optou por este serviço.
+
+#### Bundler Próprio
+
+Para usar um bundler próprio:
+
+```typescript
+const smartWallet = await SmartWallet.create(
+    messagesSignMethod,
+    userOpHashSignMethod,
+    senderAddress,
+    rpcURL,
+    apiKey
+);
+```
+
+Então, especifique a função do seu bundler que assina a transação. Você pode usar um signatário da biblioteca SDK ou definir uma função personalizada que deve seguir a função `signTx` da interface `Signer` acima.provideSignaturesAndSendUserOperations Vamos usar um signatário GCP HSM da biblioteca SDK.
+
+```typescript
+import { GCPSigner } from '@omnes/smartwallet-ts-sdk';
+
+const selfBundler = await GCPSigner.create(
+    googleCredentials, 
+    googleProjectId,
+    kmsLocationId, 
+    kmsKeyRingId, 
+    clientId, 
+    versionId
+);
+```
+
+Finalmente, anexe este bundler próprio à instância SmartWallet:
+
+```typescript
+smartWallet.attachBundler(selfBundler.signTx);
+```
+
+#### Bundler Remoto
+
+Para instanciar o SDK SmartWallet usando o bundler remoto:
+
+```typescript
+const smartWallet = await SmartWallet.create(
+    messagesSignMethod,
+    userOpHashSignMethod,
+    senderAddress,
+    rpcURL,
+    apiKey
+);
+```
+
+Se, por qualquer motivo, você desejar usar um bundler local/próprio mesmo tendo optado pelo bundler remoto, você pode usar:
+
+```typescript
+const smartWallet = await SmartWallet.create(
+    messagesSignMethod,
+    userOpHashSignMethod,
+    senderAddress,
+    rpcURL,
+    apiKey,
+    null,
+    true
+);
+```
+
+Defina seu bundler próprio. Vamos usar um bundler de chave privada regular:
+
+```typescript
+import { PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const selfBundler = await PKSigner.create(privateKey as `0x${string}`);
+```
+
+Finalmente, anexe o bundler à instância SmartWallet:
+
+```typescript
+smartWallet.attachBundler(selfBundler.signTx);
+```
+
+### Endereços de Contratos
+
+Você pode ter notado que não especificamos os endereços dos contratos que são gerados quando você configura sua conta. Se você estiver usando nosso serviço de armazenamento de endereços de contratos, você não precisa passar esses endereços quando instanciar o SmartWallet. No entanto, se você não optou por esse serviço, é obrigatório passar os endereços.
+
+A estrutura que define os endereços é mostrada abaixo:
+
+```typescript
+interface Contracts {
+    factory?: Address;
+    validator?: Address;
+    validatorType?: number;
+    paymaster?: Address;
+    paymasterType?: number;
+    aggregator?: Address;
+    aggregatorType?: number;
+}
+```
+
+Você precisa passar pelo menos os endereços da factory e validador (`factory` e `validator`) assim como o tipo de validador (`validatorType`). Se você configurou um paymaster, passe o endereço (`paymaster`) e seu tipo (`paymasterType`) também. Se você não configurou um paymaster, o SDK entende que você irá patrocinar todos os custos da transação e nenhum reembolso será transferido para você.
+
+Da mesma forma, insira o endereço do agregador (`aggregator`) e tipo (`aggregatorType`) se você configurou um.
+
+Os tipos são:
+
+```typescript
+enum ValidatorType {
+    UNSET = 0,
+    ECDSA_VALIDATOR = 1,
+    PASSKEY_VALIDATOR = 2,
+    ECDSA_PASSKEY_VALIDATOR = 3,
+    MULTISIG_VALIDATOR = 4,
+    MULTISIG_PASSKEY_VALIDATOR = 5,
+    MULTICHAIN_VALIDATOR = 6,
+    CUSTOM_VALIDATOR = 7,
+}
+
+enum PaymasterType {
+    UNSET = 0,
+    SPONSOR_PAYMASTER = 1,
+    DEPOSIT_PAYMASTER = 2,
+    MIX_PAYMASTER = 3,
+}
+
+enum AggregatorType {
+    UNSET = 0,
+    K1_AGGREGATOR = 1,
+    MERKLE_TREE_AGGREGATOR = 2,
+}
+```
+
+Um exemplo para instanciar o SmartWallet com os endereços:
+
+```typescript
+const contracts = {
+    factory: "0xD84F7ac8aB9dB8a259244d629d9c539F2159e6EC";
+    validator: "0x843821106057e0a15e10adbC69238b051707FFd1";
+    validatorType: ValidatorType.ECDSA_VALIDATOR;
+    paymaster: "0x1d5bE4673345116E5870f93694fe6c1207d81637";
+    paymasterType: PaymasterType.SPONSOR_PAYMASTER;
+}
+
+const smartWallet = await SmartWallet.create(
+    messagesSignMethod,
+    userOpHashSignMethod,
+    senderAddress,
+    rpcURL,
+    apiKey,
+    contracts
+);
+```
+
+## 💰 Paymaster - Transações Sem Gas
+
+O recurso Paymaster permite que você patrocine taxas de gas para as transações dos seus usuários, criando uma experiência Web3 perfeita onde os usuários não precisam se preocupar com custos de gas!
+
+### Como Funciona
+
+Quando um endereço paymaster é configurado (seja passado como entrada ou armazenado em nosso serviço), o SDK integra automaticamente o fluxo paymaster em cada UserOperation. Isso significa:
+
+- ✅ **Usuários não pagam gas** - Transações são patrocinadas
+- ✅ **Integração automática** - Nenhum código extra necessário
+- ✅ **Financiamento flexível** - Adicione fundos via dashboard a qualquer momento
+
+### Configurando Paymaster
+
+Você pode configurar um paymaster de duas maneiras:
+
+#### 1. Usando Endereços de Contratos
+
+Passe o endereço paymaster ao criar a instância SmartWallet:
+
+```typescript
+const contracts = {
+    factory: "0xD84F7ac8aB9dB8a259244d629d9c539F2159e6EC",
+    validator: "0x843821106057e0a15e10adbC69238b051707FFd1",
+    validatorType: ValidatorType.ECDSA_VALIDATOR,
+    paymaster: "0x1d5bE4673345116E5870f93694fe6c1207d81637", // Seu endereço paymaster
+    paymasterType: PaymasterType.SPONSOR_PAYMASTER, // ou DEPOSIT_PAYMASTER, MIX_PAYMASTER
+}
+
+const smartWallet = await SmartWallet.create(
+    messagesSignMethod,
+    userOpHashSignMethod,
+    senderAddress,
+    rpcURL,
+    apiKey,
+    contracts
+);
+```
+
+#### 2. Usando Nosso Serviço de Armazenamento
+
+Se você optou pelo nosso serviço de armazenamento de endereços de contratos, o paymaster será configurado automaticamente. Apenas certifique-se de que seu paymaster esteja configurado no dashboard SmartWallet.
+
+### Tipos de Paymaster
+
+O SDK suporta diferentes tipos de paymaster:
+
+```typescript
+enum PaymasterType {
+    UNSET = 0,
+    SPONSOR_PAYMASTER = 1,    // Transações totalmente patrocinadas
+    DEPOSIT_PAYMASTER = 2,    // Usuários depositam, paymaster paga
+    MIX_PAYMASTER = 3,        // Modelo híbrido
+}
+```
+
+- **SPONSOR_PAYMASTER**: Você paga todas as taxas de gas para usuários
+- **DEPOSIT_PAYMASTER**: Usuários depositam fundos, paymaster cuida do gas
+- **MIX_PAYMASTER**: Modelo híbrido flexível
+
+### Gerenciando Fundos do Paymaster
+
+Você pode adicionar fundos ao seu contrato paymaster usando o dashboard SmartWallet. O SDK usará automaticamente o paymaster para todas as transações uma vez configurado.
+
+### Usando Paymaster Público
+
+Para usar um paymaster público/compartilhado, simplesmente defina seu endereço no objeto contracts:
+
+```typescript
+const contracts = {
+    // ... outros endereços
+    paymaster: "0xPublicPaymasterAddress...",
+    paymasterType: PaymasterType.SPONSOR_PAYMASTER,
+}
+```
+
+### Sem Paymaster? Sem Problema!
+
+Se você não configurou um paymaster, o SDK funcionará normalmente - os usuários pagarão suas próprias taxas de gas. O fluxo paymaster é completamente opcional e só ativa quando um endereço paymaster é fornecido.
+
+**Nota**: Sem um paymaster, você patrocinará todos os custos da transação por conta própria, e nenhum reembolso será transferido para você.
+
+## Signatários Disponíveis
+
+### PKSigner (Private Key)
+
+```typescript
+import { PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+console.log('Address:', signer.getEVMAddress());
+```
+
+### GCPSigner (Google Cloud KMS)
+
+```typescript
+import { GCPSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await GCPSigner.create(
+    googleCredentials,    // JSON string of GCP credentials
+    googleProjectId,      // GCP project ID
+    kmsLocationId,        // KMS location (e.g., 'us-east1')
+    kmsKeyRingId,         // KMS key ring ID
+    clientId,             // Client ID (crypto key name)
+    versionId             // Key version ID
+);
+
+console.log('Address:', signer.getEVMAddress());
+```
+
+### MultisigSigner
+
+```typescript
+import { MultisigSigner, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer1 = await PKSigner.create(privateKey1 as `0x${string}`);
+const signer2 = await PKSigner.create(privateKey2 as `0x${string}`);
+const signer3 = await PKSigner.create(privateKey3 as `0x${string}`);
+
+const multisigSigner = MultisigSigner.create([signer1, signer2, signer3]);
+
+// Get addresses
+const addresses = multisigSigner.getEVMAddresses();
+console.log('Signer addresses:', addresses);
+```
+
+### PasskeySigner
+
+```typescript
+import { PasskeySigner } from '@omnes/smartwallet-ts-sdk';
+
+const signer = PasskeySigner.create(webSocketURL);
+```
+
+## Miscellaneous
+
+### Read
+
+The read function performs several storage reads on the blockchain. Example:
+
+```typescript
+const result = smartWallet.read([
+    {
+        to: "0x843821106057e0a15e10adbC69238b051707FFd1";
+        funcSignature: "balanceOf(address)";
+        params: [
+            "0xD84F7ac8aB9dB8a259244d629d9c539F2159e6EC"
+        ];
+        returnTypes: ["address"];
+    }
+]);
+
+console.log(result);
+```
+
+### Complete Example
+
+```typescript
+import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+
+async function completeExample() {
+  // 1. Criar signatário
+  const signer = await PKSigner.create(privateKey as `0x${string}`);
+  
+  // 2. Criar SmartWallet
+  const smartWallet = await SmartWallet.create(
+    signer.signMessage,
+    signer.signMessage,
+    signer.getEVMAddress(),
+    rpcURL,
+    apiKey
+  );
+  
+  // 3. Construir operações
+  const operations: Operation = {
+    to: tokenAddress,
+    value: BigInt(0),
+    funcSignature: 'transfer(address,uint256)',
+    params: [recipient, amount]
+  };
+  
+  const accountOperations: AccountOperations[] = [{
+    account: {
+      walletCustody: 1,
+      salt: 'user@example.com',
+      publicKeys: []
+    },
+    operations: [operations],
+    settings: {}
+  }];
+  
+  // 4. Executar
+  const result = await smartWallet.buildAndRequestSendUserOperations(
+    accountOperations,
+    [],
+    []
+  );
+  
+  console.log('Transaction hash:', result.response.txHash);
+  console.log('Status:', result.response.status);
+  
+  return result;
+}
+```
+
+## Próximos Passos
+
+- **[Exemplos JavaScript](/docs/examples/javascript-examples)** - Exemplos HTTP JavaScript (usando fetch)
+- **[Exemplos Python](/docs/examples/python-examples)** - Exemplos HTTP Python (usando requests)
+- **[Exemplos cURL](/docs/examples/curl-examples)** - Exemplos de linha de comando
+- **[Recursos Avançados](/docs/advanced/multisig)** - Aprenda sobre carteiras multisig e passkey
+- **[Solução de Problemas](/docs/advanced/troubleshooting)** - Problemas comuns e soluções
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <div className="text-blue-800">
+    <strong>💡 Precisa de Ajuda?</strong> Junte-se à nossa comunidade de desenvolvedores ou verifique nosso repositório GitHub para exemplos e rastreamento de problemas. Para casos de uso avançados, use o SmartWallet SDK para controle completo.
+  </div>
+</div> 

@@ -1,0 +1,233 @@
+---
+title: Python Examples
+description: Complete Python examples for calling the MSA API directly using HTTP requests.
+---
+
+# Python Examples
+
+Complete Python examples for calling the MSA API directly using HTTP requests. These examples use the `requests` library to make direct API calls - there is no Python SDK, only the TypeScript SDK is available.
+
+## Setup
+
+```python
+import requests
+import os
+from typing import Dict, List, Optional
+
+MSA_CONFIG = {
+    'base_url': 'https://api.msa.omnes.tech',
+    'api_key': os.getenv('MSA_API_KEY'),
+    'settings': {
+        'rpc': 'https://rpc-amoy.polygon.technology/',
+        'factory': '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+        'validator': '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+        'entryPoint': '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+        'beaconAdminAddress': '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618'
+    }
+}
+
+CUSTODY_TYPES = {
+    'ECDSA_VALIDATOR': 1,
+    'ECDSA_PASSKEY_VALIDATOR': 2,
+    'PASSKEY_VALIDATOR': 3,
+    'MULTISIG_VALIDATOR': 4,
+    'MULTISIG_PASSKEY_VALIDATOR': 5
+}
+```
+
+## Wallet Operations
+
+### Predict Wallet Address
+
+```python
+def predict_wallet(salt: str) -> str:
+    url = f"{MSA_CONFIG['base_url']}/predict"
+    
+    payload = {
+        'accounts': [{
+            'walletCustody': CUSTODY_TYPES['ECDSA_VALIDATOR'],
+            'salt': salt
+        }],
+        'settings': MSA_CONFIG['settings']
+    }
+    
+    response = requests.post(url, json=payload)
+    result = response.json()
+    
+    return result['predictions'][0]['wallet']
+
+# Usage
+wallet_address = predict_wallet('user@example.com')
+print(f'Predicted address: {wallet_address}')
+```
+
+### Create Wallet
+
+```python
+def create_wallet(salt: str, client_id: str, version_id: str) -> Dict:
+    url = f"{MSA_CONFIG['base_url']}/create"
+    
+    payload = {
+        'accounts': [{
+            'walletCustody': CUSTODY_TYPES['ECDSA_VALIDATOR'],
+            'salt': salt
+        }],
+        'settings': {
+            **MSA_CONFIG['settings'],
+            'beaconAdminCreationCode': '0x60a060405260405161059d...',
+            'signer': {
+                'clientId': client_id,
+                'versionId': version_id
+            }
+        }
+    }
+    
+    response = requests.post(url, json=payload)
+    return response.json()
+
+# Usage
+result = create_wallet('user@example.com', 'your-client-id', '1')
+print(f'Wallet created: {result["returnData"][0]["0"]["wallet"]}')
+```
+
+### Check Wallet
+
+```python
+def check_wallet(salt: str) -> Dict:
+    url = f"{MSA_CONFIG['base_url']}/check"
+    
+    payload = {
+        'accounts': [{
+            'walletCustody': CUSTODY_TYPES['ECDSA_VALIDATOR'],
+            'salt': salt
+        }],
+        'settings': MSA_CONFIG['settings']
+    }
+    
+    response = requests.post(url, json=payload)
+    result = response.json()
+    
+    return result['results'][0]
+
+# Usage
+check = check_wallet('user@example.com')
+if check['exists']:
+    print(f'Wallet exists: {check["wallet"]}')
+```
+
+## Transaction Execution
+
+### Execute Transaction
+
+```python
+def execute_transaction(operation: Dict, client_id: str, version_id: str) -> Dict:
+    url = f"{MSA_CONFIG['base_url']}/execute"
+    
+    payload = {
+        'operations': [operation],
+        'settings': {
+            **MSA_CONFIG['settings'],
+            'signer': {
+                'clientId': client_id,
+                'versionId': version_id
+            }
+        }
+    }
+    
+    response = requests.post(url, json=payload)
+    return response.json()
+
+# Usage
+tx_result = execute_transaction({
+    'walletCustody': CUSTODY_TYPES['ECDSA_VALIDATOR'],
+    'salt': 'user@example.com',
+    'to': '0x097d4Aed5924e2172451973153Fc0e03407eD1F9',
+    'funcSignature': 'transfer(address,uint256)',
+    'funcParams': [
+        '0xRecipientAddress...',
+        '1000000000000000000'
+    ]
+}, 'your-client-id', '1')
+
+print(f'Transaction hash: {tx_result["txHash"]}')
+```
+
+## Complete Workflow
+
+```python
+def complete_wallet_workflow(user_salt: str, client_id: str, version_id: str) -> Dict:
+    try:
+        # 1. Predict
+        print('Predicting wallet...')
+        wallet_address = predict_wallet(user_salt)
+        print(f'Predicted address: {wallet_address}')
+        
+        # 2. Check
+        print('Checking wallet...')
+        check = check_wallet(user_salt)
+        
+        if not check['exists']:
+            # 3. Create
+            print('Creating wallet...')
+            create_result = create_wallet(user_salt, client_id, version_id)
+            print(f'Wallet created: {create_result["txHash"]}')
+        else:
+            print('Wallet already exists')
+        
+        # 4. Execute
+        print('Executing transaction...')
+        tx_result = execute_transaction({
+            'walletCustody': CUSTODY_TYPES['ECDSA_VALIDATOR'],
+            'salt': user_salt,
+            'to': '0x097d4Aed5924e2172451973153Fc0e03407eD1F9',
+            'funcSignature': 'transfer(address,uint256)',
+            'funcParams': ['0xRecipient...', '1000000']
+        }, client_id, version_id)
+        
+        print(f'Transaction sent: {tx_result["txHash"]}')
+        
+        return {
+            'wallet': wallet_address,
+            'created': not check['exists'],
+            'txHash': tx_result['txHash']
+        }
+    except Exception as error:
+        print(f'Error: {error}')
+        raise
+```
+
+## Error Handling
+
+```python
+def safe_execute(operation: Dict, client_id: str, version_id: str) -> Dict:
+    try:
+        result = execute_transaction(operation, client_id, version_id)
+        
+        if result['status'] == 1:
+            return {'success': True, 'txHash': result['txHash']}
+        else:
+            return {'success': False, 'errors': result.get('errors', [])}
+    except requests.exceptions.RequestException as e:
+        if 'insufficient funds' in str(e):
+            print('Wallet needs more funds')
+        elif 'Invalid client ID' in str(e):
+            print('Check your Fireblocks credentials')
+        else:
+            print(f'Transaction failed: {e}')
+        return {'success': False, 'error': str(e)}
+```
+
+## Next Steps
+
+- **[JavaScript Examples](/docs/examples/javascript-examples)** - Browser-based HTTP examples
+- **[cURL Examples](/docs/examples/curl-examples)** - Command-line examples
+- **[TypeScript SDK](/docs/sdk/typescript-sdk)** - Type-safe SDK
+
+---
+
+<div className="mt-8 p-4 bg-green-50 rounded-lg">
+  <div className="text-green-800">
+    <strong>🐍 Python Examples:</strong> These examples show how to call the MSA API directly using HTTP requests. For a full-featured SDK with type safety, check out the <a href="/docs/sdk/typescript-sdk" className="underline">TypeScript SDK</a>.
+  </div>
+</div>
+

@@ -1,0 +1,221 @@
+---
+title: Passkey Transaction Execution
+description: Execute transactions using passkey authentication with WebAuthn signatures.
+---
+
+# Passkey Transaction Execution
+
+Execute transactions using passkey (WebAuthn) authentication. This enables passwordless, biometric-based transaction signing without managing private keys.
+
+## Overview
+
+Passkey execution requires:
+1. Building UserOperations
+2. Signing UserOp hashes with passkeys (frontend)
+3. Encoding passkey signatures
+4. Executing with encoded signatures
+
+## Complete Flow
+
+<Tabs items={["Frontend (Passkey)", "Backend (Execute)"]}>
+<Tab value="Frontend (Passkey)">
+
+```typescript
+// 1. Build UserOperations (from backend)
+const { userOps, accessList } = await buildUserOperations(accountOperations);
+
+// 2. Extract UserOp hashes
+const userOpHashes = userOps.map(op => op.userOpHash);
+
+// 3. Sign each hash with passkey
+const passkeySignatures = [];
+
+for (const hash of userOpHashes) {
+  // Convert hex to Uint8Array
+  const challengeBytes = hexToUint8Array(hash);
+  
+  // Create authentication options
+  const publicKeyOptions: PublicKeyCredentialRequestOptions = {
+    challenge: challengeBytes,
+    allowCredentials: [{
+      id: base64UrlToBuffer(credentialId),
+      type: "public-key",
+      transports: ["internal", "usb", "nfc", "ble", "hybrid"],
+    }],
+    userVerification: "required" as UserVerificationRequirement,
+    timeout: 60000,
+  };
+  
+  // Get credentials and sign
+  const credential = await navigator.credentials.get({
+    publicKey: publicKeyOptions
+  }) as PublicKeyCredential;
+  
+  if (credential && credential.response) {
+    const response = credential.response as AuthenticatorAssertionResponse;
+    
+    // Extract signature components
+    const authenticatorData = arrayBufferToHex(response.authenticatorData);
+    let clientDataJSON = new TextDecoder().decode(response.clientDataJSON);
+    
+    // Clean clientDataJSON
+    const clientData = JSON.parse(clientDataJSON);
+    delete clientData.other_keys_can_be_added_here;
+    clientDataJSON = JSON.stringify(clientData);
+    
+    // Parse DER signature
+    const signatureArray = new Uint8Array(response.signature);
+    const { r, s } = parseDERSignature(signatureArray);
+    
+    passkeySignatures.push({
+      authenticatorData,
+      clientDataJSON,
+      r: r.toString(),
+      s: s.toString()
+    });
+  }
+}
+
+// 4. Send to backend for execution
+await executeWithPasskeySignatures(userOps, accessList, passkeySignatures);
+```
+
+</Tab>
+<Tab value="Backend (Execute)">
+
+```typescript
+import { encodeAbiParameters } from 'viem';
+import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
+
+// Build UserOperations
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+  signer.signMessage,
+  null, // Don't auto-sign
+  signer.getEVMAddress(),
+  rpcURL,
+  apiKey
+);
+
+const result = await smartWallet.buildUserOperations(accountOperations, [], []);
+
+// Encode passkey signatures
+const encodedSignatures = passkeySignatures.map(sig => {
+  return encodeAbiParameters(
+    [{
+      type: 'tuple', components: [
+        { type: 'bytes' },      // authenticatorData
+        { type: 'string' },    // clientDataJSON
+        { type: 'uint256' },   // challenge (23)
+        { type: 'uint256' },   // type (1)
+        { type: 'uint256' },   // r
+        { type: 'uint256' }    // s
+      ]
+    }],
+    [[
+      sig.authenticatorData,
+      sig.clientDataJSON,
+      BigInt(23),
+      BigInt(1),
+      BigInt(sig.r),
+      BigInt(sig.s)
+    ]]
+  );
+});
+
+// Execute with passkey signatures
+const response = await smartWallet.provideSignaturesAndRequestSendUserOperations(
+  result.userOps,
+  result.accessList,
+  encodedSignatures
+);
+
+console.log('Transaction hash:', response.txHash);
+```
+
+</Tab>
+</Tabs>
+
+## Passkey Registration
+
+Register passkey before first use:
+
+```typescript
+const publicKeyOptions = {
+  pubKeyCredParams: [{
+    type: "public-key" as const,
+    alg: -7, // ES256 (P-256 curve)
+  }],
+  attestation: "direct" as AttestationConveyancePreference,
+  authenticatorSelection: {
+    authenticatorAttachment: "platform" as AuthenticatorAttachment,
+    residentKey: "required" as ResidentKeyRequirement,
+    requireResidentKey: true,
+    userVerification: "required" as UserVerificationRequirement, // UV flag
+  }
+};
+
+const credential = await navigator.credentials.create({
+  publicKey: publicKeyOptions
+}) as PublicKeyCredential;
+
+// Extract and store public key (keep in base64URL DER format)
+const publicKey = /* extract from credential.response.publicKey */;
+// Store: credentialId and publicKey for wallet creation
+```
+
+## Helper Functions
+
+```typescript
+function hexToUint8Array(hex: string): Uint8Array {
+  return new Uint8Array(
+    hex.slice(2).match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))
+  );
+}
+
+function arrayBufferToHex(buffer: ArrayBuffer): string {
+  return '0x' + Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function parseDERSignature(derSignature: Uint8Array): { r: bigint; s: bigint } {
+  let offset = 4; // Skip DER header
+  const rLength = derSignature[offset - 1];
+  let r = derSignature.slice(offset, offset + rLength);
+  if (r[0] === 0) r = r.slice(1);
+  
+  offset += rLength + 2;
+  const sLength = derSignature[offset - 1];
+  let s = derSignature.slice(offset, offset + sLength);
+  if (s[0] === 0) s = s.slice(1);
+  
+  return {
+    r: BigInt('0x' + Array.from(r).map(b => b.toString(16).padStart(2, '0')).join('')),
+    s: BigInt('0x' + Array.from(s).map(b => b.toString(16).padStart(2, '0')).join(''))
+  };
+}
+```
+
+## Best Practices
+
+1. **Store Credential IDs**: Save credentialId for each passkey
+2. **Handle Errors**: Network issues can interrupt signing
+3. **User Feedback**: Show loading states during signing
+4. **Multiple Passkeys**: Support backup passkeys
+5. **Timeout Handling**: 60-second timeout is standard
+
+## Next Steps
+
+- **[Advanced Passkeys](/docs/advanced/passkeys)** - Deep dive into passkey implementation
+- **[Gas Estimation](/docs/transaction-execution/gas-estimation)** - Optimize transaction costs
+- **[Encoded Execution](/docs/transaction-execution/encoded-execution)** - Manual UserOp construction
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <div className="text-blue-800">
+    <strong>🔐 Passwordless Experience:</strong> Passkey execution provides a seamless, secure way to sign transactions without managing private keys.
+  </div>
+</div>
+

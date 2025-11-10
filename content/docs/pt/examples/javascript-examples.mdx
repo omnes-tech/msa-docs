@@ -1,0 +1,259 @@
+---
+title: Exemplos JavaScript
+description: Exemplos completos em JavaScript para chamar a API MSA diretamente usando HTTP fetch.
+---
+
+# Exemplos JavaScript
+
+Exemplos completos em JavaScript para chamar a API MSA diretamente usando HTTP fetch. Estes exemplos usam APIs nativas do navegador para fazer chamadas diretas da API - não há SDK JavaScript, apenas o SDK TypeScript está disponível.
+
+## Configuração
+
+```javascript
+const MSA_CONFIG = {
+  baseURL: 'https://api.msa.omnes.tech',
+  apiKey: 'sua-chave-api-aqui',
+  settings: {
+    rpc: 'https://rpc-amoy.polygon.technology/',
+    factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
+    validator: '0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a',
+    entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    beaconAdminAddress: '0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618'
+  }
+};
+
+const TIPOS_CUSTODY = {
+  ECDSA_VALIDATOR: 1,
+  ECDSA_PASSKEY_VALIDATOR: 2,
+  PASSKEY_VALIDATOR: 3,
+  MULTISIG_VALIDATOR: 4,
+  MULTISIG_PASSKEY_VALIDATOR: 5
+};
+```
+
+## Operações de Carteira
+
+### Prever Endereço de Carteira
+
+```javascript
+async function predictWallet(salt) {
+  const response = await fetch(`${MSA_CONFIG.baseURL}/predict`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      accounts: [{
+        walletCustody: CUSTODY_TYPES.ECDSA_VALIDATOR,
+        salt: salt
+      }],
+      settings: MSA_CONFIG.settings
+    })
+  });
+  
+  const result = await response.json();
+  return result.predictions[0].wallet;
+}
+
+// Usage
+const walletAddress = await predictWallet('user@example.com');
+console.log('Predicted address:', walletAddress);
+```
+
+### Criar Carteira
+
+```javascript
+async function createWallet(salt, signer) {
+  const response = await fetch(`${MSA_CONFIG.baseURL}/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      accounts: [{
+        walletCustody: CUSTODY_TYPES.ECDSA_VALIDATOR,
+        salt: salt
+      }],
+      settings: {
+        ...MSA_CONFIG.settings,
+        beaconAdminCreationCode: '0x60a060405260405161059d...',
+        signer: {
+          clientId: signer.clientId,
+          versionId: signer.versionId
+        }
+      }
+    })
+  });
+  
+  const result = await response.json();
+  return result;
+}
+
+// Usage
+const result = await createWallet('user@example.com', {
+  clientId: 'your-client-id',
+  versionId: '1'
+});
+console.log('Wallet created:', result.returnData[0]['0'].wallet);
+```
+
+### Verificar Carteira
+
+```javascript
+async function checkWallet(salt) {
+  const response = await fetch(`${MSA_CONFIG.baseURL}/check`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      accounts: [{
+        walletCustody: CUSTODY_TYPES.ECDSA_VALIDATOR,
+        salt: salt
+      }],
+      settings: MSA_CONFIG.settings
+    })
+  });
+  
+  const result = await response.json();
+  return result.results[0];
+}
+
+// Usage
+const check = await checkWallet('user@example.com');
+if (check.exists) {
+  console.log('Wallet exists:', check.wallet);
+}
+```
+
+## Execução de Transações
+
+### Executar Transação
+
+```javascript
+async function executeTransaction(operation, signer) {
+  const response = await fetch(`${MSA_CONFIG.baseURL}/execute`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      operations: [operation],
+      settings: {
+        ...MSA_CONFIG.settings,
+        signer: {
+          clientId: signer.clientId,
+          versionId: signer.versionId
+        }
+      }
+    })
+  });
+  
+  const result = await response.json();
+  return result;
+}
+
+// Usage
+const txResult = await executeTransaction({
+  walletCustody: CUSTODY_TYPES.ECDSA_VALIDATOR,
+  salt: 'user@example.com',
+  to: '0x097d4Aed5924e2172451973153Fc0e03407eD1F9',
+  funcSignature: 'transfer(address,uint256)',
+  funcParams: [
+    '0xRecipientAddress...',
+    '1000000000000000000'
+  ]
+}, {
+  clientId: 'your-client-id',
+  versionId: '1'
+});
+
+console.log('Transaction hash:', txResult.txHash);
+```
+
+## Fluxo de Trabalho Completo
+
+```javascript
+async function completeWalletWorkflow(userSalt, signer) {
+  try {
+    // 1. Predict
+    console.log('Predicting wallet...');
+    const walletAddress = await predictWallet(userSalt);
+    console.log('Predicted address:', walletAddress);
+    
+    // 2. Check
+    console.log('Checking wallet...');
+    const check = await checkWallet(userSalt);
+    
+    if (!check.exists) {
+      // 3. Create
+      console.log('Creating wallet...');
+      const createResult = await createWallet(userSalt, signer);
+      console.log('Wallet created:', createResult.txHash);
+    } else {
+      console.log('Wallet already exists');
+    }
+    
+    // 4. Execute
+    console.log('Executing transaction...');
+    const txResult = await executeTransaction({
+      walletCustody: CUSTODY_TYPES.ECDSA_VALIDATOR,
+      salt: userSalt,
+      to: '0x097d4Aed5924e2172451973153Fc0e03407eD1F9',
+      funcSignature: 'transfer(address,uint256)',
+      funcParams: ['0xRecipient...', '1000000']
+    }, signer);
+    
+    console.log('Transaction sent:', txResult.txHash);
+    
+    return {
+      wallet: walletAddress,
+      created: !check.exists,
+      txHash: txResult.txHash
+    };
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+}
+```
+
+## Tratamento de Erros
+
+```javascript
+async function safeExecute(operation, signer) {
+  try {
+    const result = await executeTransaction(operation, signer);
+    
+    if (result.status === 1) {
+      return { success: true, txHash: result.txHash };
+    } else {
+      return { success: false, errors: result.errors };
+    }
+  } catch (error) {
+    if (error.message.includes('insufficient funds')) {
+      console.error('Wallet needs more funds');
+    } else if (error.message.includes('Invalid client ID')) {
+      console.error('Check your Fireblocks credentials');
+    } else {
+      console.error('Transaction failed:', error.message);
+    }
+    return { success: false, error: error.message };
+  }
+}
+```
+
+## Próximos Passos
+
+- **[Python Examples](/docs/examples/python-examples)** - Python HTTP examples
+- **[cURL Examples](/docs/examples/curl-examples)** - Command-line examples
+- **[TypeScript SDK](/docs/sdk/typescript-sdk)** - Type-safe SDK
+
+---
+
+<div className="mt-8 p-4 bg-blue-50 rounded-lg">
+  <div className="text-blue-800">
+    <strong>💡 Tip:</strong> Use the TypeScript SDK for better type safety and IntelliSense support in your JavaScript projects.
+  </div>
+</div>
+

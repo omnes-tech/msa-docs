@@ -1,4 +1,5 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 /**
  * Shared layout configurations
@@ -23,7 +24,13 @@ export const baseOptions: BaseLayoutProps = {
         <span>MSA API Docs</span>
       </>
     ),
+    url: '/', // Ensure url is always defined
   },
   // see https://fumadocs.dev/docs/ui/navigation/links
-  links: [],
+  links: [
+    {
+      text: '',
+      children: <LanguageSwitcher />,
+    },
+  ],
 };

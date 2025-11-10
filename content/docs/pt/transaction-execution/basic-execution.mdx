@@ -1,0 +1,359 @@
+---
+title: Execução Básica de Transações
+description: Execute transações das suas carteiras MSA com operações básicas, transações em lote e gerenciamento de gas.
+---
+
+# Execução Básica de Transações
+
+Execute transações das suas carteiras Account Abstraction usando a API MSA. Este guia cobre operações básicas, transações em lote e padrões comuns de execução.
+
+## Visão Geral
+
+A execução de transações na MSA funciona através de **UserOperations** (UserOps), que são agrupadas e enviadas através do contrato EntryPoint. Isso possibilita operações em lote, abstração de gas e recursos avançados de transação.
+
+## Transação Básica
+
+### Operação Única
+
+<Tabs items={["TypeScript", "Python", "cURL"]}>
+<Tab value="TypeScript">
+
+```typescript
+import { PKSigner, SmartWallet, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
+
+// Load config variables
+const privateKey = process.env.PRIVATE_KEY;
+const rpcURL = process.env.RPC_URL as string;
+const apiKey = process.env.API_KEY as string;
+
+// Create a signer (private key, GCP/AWS HSM, etc.)
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+
+// Create SmartWallet instance
+const smartWallet = await SmartWallet.create(
+    signer.signMessage, // message sign method
+    signer.signMessage, // this is the method to sign the userOp hash.
+    signer.getEVMAddress(), // regular method defined for all signers provided by the SmartWallet SDK library
+    rpcURL,
+    apiKey
+);
+
+// build a user operation
+const operations: Operation = {
+    to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Token contract
+    value: BigInt(0), // SDK expects bigint. Value to send in wei.
+    funcSignature: "transfer(address,uint256)", // function signature as used in Solidity.
+    params: [
+        "0xRecipientAddress...",
+        1000000000000000000 // 1 token (18 decimals)
+    ] // function parameters
+};
+
+const accountOperations: AccountOperations[] = [
+    {
+        account: {
+            walletCustody: 1, // ECDSA_VALIDATOR
+            salt: "user@example.com", // you can use any salt you want to create the account
+            publicKeys: []
+        },
+        operations: [operations],
+        settings: {} // Empty settings object - SDK will provide defaults
+    }
+];
+
+// Build and send UserOperations
+const result = await smartWallet.buildAndRequestSendUserOperations(
+    accountOperations,
+    [], // useABI - you can define your own ABI here. This is used to parse errors and events.
+    [] // signers - if more than one signer, you can provide an array of signer addresses
+);
+
+console.log('Transaction hash:', result.response.txHash);
+console.log('Status:', result.response.status);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+def execute_transaction():
+    url = "https://api.msa.omnes.tech/execute"
+    
+    payload = {
+        "operations": [{
+            "walletCustody": 1,
+            "salt": "user@example.com",
+            "to": "0x097d4Aed5924e2172451973153Fc0e03407eD1F9",
+            "funcSignature": "transfer(address,uint256)",
+            "funcParams": [
+                "0xRecipientAddress...",
+                "1000000000000000000"
+            ]
+        }],
+        "settings": {
+            "rpc": "https://rpc-amoy.polygon.technology/",
+            "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+            "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+            "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+            "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+            "signer": {
+                "clientId": "your-client-id",
+                "versionId": "1"
+            }
+        }
+    }
+    
+    response = requests.post(url, json=payload)
+    result = response.json()
+    
+    print(f'Transaction hash: {result["txHash"]}')
+    return result
+
+execute_transaction()
+```
+
+</Tab>
+<Tab value="cURL">
+
+```bash
+curl -X POST "https://api.msa.omnes.tech/execute" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operations": [{
+      "walletCustody": 1,
+      "salt": "user@example.com",
+      "to": "0x097d4Aed5924e2172451973153Fc0e03407eD1F9",
+      "funcSignature": "transfer(address,uint256)",
+      "funcParams": [
+        "0xRecipientAddress...",
+        "1000000000000000000"
+      ]
+    }],
+    "settings": {
+      "rpc": "https://rpc-amoy.polygon.technology/",
+      "factory": "0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4",
+      "validator": "0x9bD18Da66990F80d598dE02d5143dC9A4422eC3a",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "beaconAdminAddress": "0x99Ee7725D6a8f691d8B375e0aD33d1Aff2236618",
+      "signer": {
+        "clientId": "your-client-id",
+        "versionId": "1"
+      }
+    }
+  }'
+```
+
+</Tab>
+</Tabs>
+
+## Batch Operations
+
+Execute multiple operations in a single transaction:
+
+```typescript
+// Multiple operations in the same account
+const operations1: Operation = {
+    to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9",
+    value: BigInt(0),
+    funcSignature: "approve(address,uint256)",
+    params: ["0xSpenderAddress...", 1000000000000000000]
+};
+
+const operations2: Operation = {
+    to: "0xDeFiProtocol...",
+    value: BigInt(0),
+    funcSignature: "deposit(uint256)",
+    params: [1000000000000000000]
+};
+
+const operations3: Operation = {
+    to: "0xAnotherContract...",
+    value: BigInt(0),
+    funcSignature: "someFunction(address,uint256)",
+    params: ["0xAddress...", 123456]
+};
+
+const accountOperations: AccountOperations[] = [{
+    account: {
+        walletCustody: 1, // ECDSA_VALIDATOR
+        salt: "user@example.com",
+        publicKeys: []
+    },
+    operations: [operations1, operations2, operations3],
+    settings: {}
+}];
+
+const result = await smartWallet.buildAndRequestSendUserOperations(
+    accountOperations,
+    [],
+    []
+);
+```
+
+## Operation Types
+
+### Value Transfer (ETH/MATIC)
+
+```typescript
+const operations: Operation = {
+    to: "0xRecipientAddress...",
+    value: BigInt(1000000000000000000), // 1 ETH in wei
+    funcSignature: "", // Empty for value transfer
+    params: []
+};
+
+const accountOperations: AccountOperations[] = [{
+    account: {
+        walletCustody: 1,
+        salt: "user@example.com",
+        publicKeys: []
+    },
+    operations: [operations],
+    settings: {}
+}];
+
+const result = await smartWallet.buildAndRequestSendUserOperations(
+    accountOperations,
+    [],
+    []
+);
+```
+
+### ERC-20 Token Operations
+
+```typescript
+// Transfer
+const transferOperation: Operation = {
+    to: tokenAddress,
+    value: BigInt(0),
+    funcSignature: "transfer(address,uint256)",
+    params: [recipient, amount]
+};
+
+// Approve
+const approveOperation: Operation = {
+    to: tokenAddress,
+    value: BigInt(0),
+    funcSignature: "approve(address,uint256)",
+    params: [spender, amount]
+};
+
+const accountOperations: AccountOperations[] = [{
+    account: {
+        walletCustody: 1,
+        salt: "user@example.com",
+        publicKeys: []
+    },
+    operations: [transferOperation], // or [approveOperation]
+    settings: {}
+}];
+
+const result = await smartWallet.buildAndRequestSendUserOperations(
+    accountOperations,
+    [],
+    []
+);
+```
+
+### DeFi Operations
+
+```typescript
+// Swap on DEX
+const swapOperation: Operation = {
+    to: dexRouterAddress,
+    value: BigInt(0),
+    funcSignature: "swapExactTokensForTokens(uint256,uint256,address[],address,uint256)",
+    params: [
+        amountIn,
+        amountOutMin,
+        path,
+        recipient,
+        deadline
+    ]
+};
+
+const accountOperations: AccountOperations[] = [{
+    account: {
+        walletCustody: 1,
+        salt: "user@example.com",
+        publicKeys: []
+    },
+    operations: [swapOperation],
+    settings: {}
+}];
+
+const result = await smartWallet.buildAndRequestSendUserOperations(
+    accountOperations,
+    [],
+    []
+);
+```
+
+## Response Format
+
+The `response` follows this structure:
+
+```typescript
+interface Response {
+    status: TxStatus;
+    txHash: Hash;
+    logs: Record<string, any>[];
+    cummulatedGasUsed: number;
+    gasUsed: number;
+    effectiveGasPrice: bigint;
+    errors: Record<string, any>[];
+    returnData: Record<string, any>[];
+    credits: number;
+}
+```
+
+## Error Handling
+
+```typescript
+try {
+    const result = await smartWallet.buildAndRequestSendUserOperations(
+        accountOperations,
+        [],
+        []
+    );
+    
+    if (result.response.status === 1) {
+        console.log('Transaction successful:', result.response.txHash);
+    } else {
+        console.error('Transaction failed:', result.response.errors);
+    }
+} catch (error) {
+    if (error.message.includes('insufficient funds')) {
+        console.error('Wallet needs more funds');
+    } else if (error.message.includes('Invalid signature')) {
+        console.error('Check your signer configuration');
+    } else {
+        console.error('Execution failed:', error.message);
+    }
+}
+```
+
+## Best Practices
+
+1. **Estimate Gas First**: Use gas estimation before execution
+2. **Handle Errors**: Always check status and errors
+3. **Use Batch Operations**: Group related operations
+4. **Set Time Limits**: Use validAfter/validUntil for time-sensitive ops
+5. **Monitor Transactions**: Track execution results
+
+## Next Steps
+
+- **[Encoded Execution](/docs/transaction-execution/encoded-execution)** - Execute pre-encoded UserOperations
+- **[Passkey Execution](/docs/transaction-execution/passkey-execution)** - Execute with passkey signatures
+- **[Gas Estimation](/docs/transaction-execution/gas-estimation)** - Estimate transaction costs
+
+---
+
+<div className="mt-8 p-4 bg-green-50 rounded-lg">
+  <div className="text-green-800">
+    <strong>✅ Ready to Execute!</strong> Your transactions are ready to be sent. Use batch operations to save gas and improve user experience.
+  </div>
+</div>
+

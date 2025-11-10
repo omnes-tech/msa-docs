@@ -1,0 +1,365 @@
+---
+title: Solução de Problemas
+description: Problemas comuns, códigos de erro e soluções para integração com a API MSA.
+---
+
+# Solução de Problemas
+
+Problemas comuns e soluções ao trabalhar com a API MSA.
+
+## Erros Comuns
+
+### Fundos Insuficientes
+
+**Erro**: `"insufficient funds"` ou `"insufficient balance"`
+
+**Causas**:
+- Endereço de carteira previsto não tem tokens nativos suficientes
+- Estimativa de gas falhou devido a saldo baixo
+
+**Soluções**:
+
+1. **Fund the predicted wallet**:
+   ```typescript
+   // 1. Predict address
+   const prediction = await client.predictWallet({
+     walletCustody: CustodyType.ECDSA_VALIDATOR,
+     salt: 'user@example.com'
+   });
+   
+   // 2. Fund the wallet
+   await sendTokens(prediction.wallet, '0.1'); // Send 0.1 MATIC/ETH
+   
+   // 3. Create wallet
+   await client.createWallet({
+     walletCustody: CustodyType.ECDSA_VALIDATOR,
+     salt: 'user@example.com'
+   });
+   ```
+
+2. **Check wallet balance**:
+   ```typescript
+   const balance = await provider.getBalance(walletAddress);
+   console.log('Balance:', ethers.utils.formatEther(balance));
+   ```
+
+### Invalid Client ID
+
+**Error**: `"Invalid client ID"` or `"Invalid credentials"`
+
+**Causes**:
+- Incorrect Fireblocks credentials
+- Client ID doesn't exist
+- Version ID incorrect (HSM) or Asset ID incorrect (MPC)
+
+**Solutions**:
+
+1. **Verify Fireblocks credentials**:
+   ```typescript
+   // HSM Configuration
+   {
+     signer: {
+       clientId: "e94aecb1-5daf-47f3-948f-2a639a56baa6",
+       versionId: "1"
+     }
+   }
+   
+   // MPC Configuration
+   {
+     signer: {
+       clientId: "e94aecb1-5daf-47f3-948f-2a639a56baa6",
+       assetId: "ETH"
+     }
+   }
+   ```
+
+2. **Check environment variables**:
+   ```bash
+   echo $MSA_CLIENT_ID
+   echo $MSA_VERSION_ID
+   ```
+
+### Network Connection Issues
+
+**Error**: `"Network connection failed"` or `"RPC error"`
+
+**Causes**:
+- Invalid RPC endpoint
+- Network congestion
+- Rate limiting
+
+**Solutions**:
+
+1. **Test RPC endpoint**:
+   ```bash
+   curl -X POST https://rpc-amoy.polygon.technology/ \
+     -H "Content-Type: application/json" \
+     -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+   ```
+
+2. **Use alternative RPC**:
+   ```typescript
+   // Using SmartWallet SDK with alternative RPC
+   import { PKSigner, SmartWallet } from '@omnes/smartwallet-ts-sdk';
+   
+   const signer = await PKSigner.create(privateKey as `0x${string}`);
+   const smartWallet = await SmartWallet.create(
+       signer.signMessage,
+       signer.signMessage,
+       signer.getEVMAddress(),
+       'https://alternative-rpc-endpoint.com', // Backup RPC
+       apiKey
+   );
+   ```
+
+3. **Add retry logic**:
+   ```typescript
+   async function executeWithRetry(operation, maxRetries = 3) {
+     for (let i = 0; i < maxRetries; i++) {
+       try {
+         return await client.execute(operation);
+       } catch (error) {
+         if (i === maxRetries - 1) throw error;
+         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+       }
+     }
+   }
+   ```
+
+### Wallet Already Exists
+
+**Error**: `"Wallet already exists"` or `status: 2`
+
+**Solutions**:
+
+1. **Check before creating**:
+   ```typescript
+   const check = await client.checkWallet({
+     walletCustody: CustodyType.ECDSA_VALIDATOR,
+     salt: 'user@example.com'
+   });
+   
+   if (check.exists) {
+     console.log('Wallet already exists:', check.wallet);
+   } else {
+     await client.createWallet({
+       walletCustody: CustodyType.ECDSA_VALIDATOR,
+       salt: 'user@example.com'
+     });
+   }
+   ```
+
+2. **Use different salt**:
+   ```typescript
+   const salt = `user-${userId}-${Date.now()}`;
+   ```
+
+### Invalid Passkey Format
+
+**Error**: `"Invalid public key format"` or `"Passkey signature invalid"`
+
+**Causes**:
+- Public key converted from base64URL DER format
+- Missing required flags (UP, UV)
+- Wrong curve (not P-256)
+
+**Solutions**:
+
+1. **Keep public key in original format**:
+   ```typescript
+   // ❌ Wrong
+   const publicKey = JSON.parse(publicKeyString);
+   const decoded = atob(publicKeyString);
+   
+   // ✅ Correct
+   const publicKey = extractedPublicKey; // Keep as-is
+   ```
+
+2. **Verify registration options**:
+   ```typescript
+   const publicKeyOptions = {
+     pubKeyCredParams: [{ type: "public-key", alg: -7 }], // ES256
+     authenticatorSelection: {
+       userVerification: "required", // UV flag
+       // ...
+     }
+   };
+   ```
+
+### Transaction Reverted
+
+**Error**: `"Transaction reverted"` or `status: 0`
+
+**Causes**:
+- Invalid function call
+- Insufficient token balance
+- Contract error
+- Reentrancy protection
+
+**Solutions**:
+
+1. **Check transaction details**:
+   ```typescript
+   const result = await client.execute({
+     operations: [{
+       walletCustody: CustodyType.ECDSA_VALIDATOR,
+       salt: 'user@example.com',
+       to: tokenAddress,
+       funcSignature: 'transfer(address,uint256)',
+       funcParams: [recipient, amount]
+     }]
+   });
+   
+   if (result.status === 0) {
+     console.error('Transaction failed:', result.errors);
+     console.error('Return data:', result.returnData);
+   }
+   ```
+
+2. **Validate inputs**:
+   ```typescript
+   // Check token balance
+   const balance = await tokenContract.balanceOf(walletAddress);
+   if (balance < amount) {
+     throw new Error('Insufficient token balance');
+   }
+   ```
+
+## Error Codes Reference
+
+| Status | Code | Description | Solution |
+|--------|------|-------------|----------|
+| Success | `1` | Transaction successful | - |
+| Failed | `0` | Transaction failed | Check errors array |
+| Already Exists | `2` | Wallet already deployed | Use check before create |
+| Partially Created | `3` | Some wallets created | Check failedUserOps |
+| Partially Executed | `4` | Some operations executed | Check errors array |
+
+## Debugging Tips
+
+### Enable Debug Logging
+
+```typescript
+// Using SmartWallet SDK
+import { PKSigner, SmartWallet } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+    signer.signMessage,
+    signer.signMessage,
+    signer.getEVMAddress(),
+    rpcURL,
+    apiKey
+);
+
+// Enable detailed logging by checking console output
+// The SDK will log UserOperation details automatically
+```
+
+### Check Transaction Status
+
+```typescript
+// Get transaction receipt
+const receipt = await client.getReceipt({
+  txHash: '0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938'
+});
+
+console.log('Status:', receipt.status === 'success' ? 'Success' : 'Failed');
+console.log('Gas used:', receipt.gasUsed);
+console.log('Logs:', receipt.logs);
+```
+
+### Validate UserOperation
+
+```typescript
+import { SmartWallet } from '@omnes/smartwallet-ts-sdk';
+
+const result = await smartWallet.buildUserOperations(accountOperations, [], []);
+
+// Validate each UserOp
+result.userOps.forEach((userOp, i) => {
+  console.log(`UserOp ${i}:`, {
+    sender: userOp.sender,
+    nonce: userOp.nonce.toString(),
+    callData: userOp.callData,
+    userOpHash: userOp.userOpHash
+  });
+});
+```
+
+## Network-Specific Issues
+
+### Polygon Amoy Testnet
+
+**Issue**: Slow transactions
+
+**Solution**: Increase gas price
+
+```typescript
+await client.execute({
+  operations: [operation],
+  settings: {
+    maxFeePerGas: '50000000000',
+    maxPriorityFeePerGas: '2000000000'
+  }
+});
+```
+
+### Base Sepolia
+
+**Issue**: Network congestion
+
+**Solution**: Use alternative RPC endpoint
+
+```typescript
+// Using SmartWallet SDK with alternative RPC
+import { PKSigner, SmartWallet } from '@omnes/smartwallet-ts-sdk';
+
+const signer = await PKSigner.create(privateKey as `0x${string}`);
+const smartWallet = await SmartWallet.create(
+    signer.signMessage,
+    signer.signMessage,
+    signer.getEVMAddress(),
+    'https://sepolia.base.org/', // Official Base RPC
+    apiKey
+);
+```
+
+## Getting Help
+
+### Check Documentation
+
+- **[Quick Start Guide](/docs/getting-started/quick-start)** - Complete workflow
+- **[API Reference](/docs/api-reference/interactive-docs)** - Interactive API docs
+- **[SDK Documentation](/docs/sdk/typescript-sdk)** - SDK reference
+
+### Support Channels
+
+- **GitHub Issues**: Report bugs and request features
+- **Community Discord**: Get help from developers
+- **Email Support**: Contact support team
+
+## Best Practices
+
+1. **Always Predict First**: Predict wallet addresses before creation
+2. **Check Wallet Status**: Verify wallet exists before operations
+3. **Handle Errors Gracefully**: Use try-catch and check status codes
+4. **Validate Inputs**: Check balances, addresses, and parameters
+5. **Test on Testnet**: Always test on testnet before mainnet
+6. **Monitor Transactions**: Track execution results and gas usage
+7. **Use Retry Logic**: Retry transient failures with exponential backoff
+
+## Next Steps
+
+- **[Quick Start](/docs/getting-started/quick-start)** - Review complete workflow
+- **[Advanced Features](/docs/advanced/multisig)** - Learn about advanced features
+- **[API Reference](/docs/api-reference/interactive-docs)** - Explore API endpoints
+
+---
+
+<div className="mt-8 p-4 bg-yellow-50 rounded-lg">
+  <div className="text-yellow-800">
+    <strong>💡 Still Having Issues?</strong> Check our GitHub issues, join our Discord community, or contact our support team for assistance.
+  </div>
+</div>
+
