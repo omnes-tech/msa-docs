@@ -21,13 +21,33 @@ export default async function Page(props: {
     notFound();
   }
 
-  // If no slug, redirect to quick-start
-  if (!slug || slug.length === 0) {
-    redirect(`/docs/${locale}/getting-started/quick-start`);
+  // If slug is a locale name (e.g., /docs/en/en, /docs/pt/pt, /docs/en/pt, /docs/pt/en), redirect to index
+  if (slug && slug.length === 1 && (slug[0] === 'en' || slug[0] === 'pt')) {
+    redirect(`/docs/${locale}/index`);
   }
 
+  // If no slug or slug is ['index'], show index page
   const source = getSource(locale);
-  const page = source.getPage(slug || []);
+  let actualSlug: string[] = [];
+  
+  if (!slug || slug.length === 0) {
+    // Empty slug means index page
+    actualSlug = [];
+  } else if (slug.length === 1 && slug[0] === 'index') {
+    // ['index'] also means index page (empty slug in Fumadocs)
+    actualSlug = [];
+  } else {
+    actualSlug = slug;
+  }
+  
+  // Try to get the page
+  let page = source.getPage(actualSlug);
+  
+  // If page not found and we're looking for index, try alternative approaches
+  if (!page && actualSlug.length === 0) {
+    // Try with explicit 'index' slug
+    page = source.getPage(['index']);
+  }
   
   if (!page) {
     notFound();
@@ -63,42 +83,62 @@ export async function generateStaticParams() {
   const enParams = sourceEn.generateParams()
     .map((params: any) => {
       const slug = params.slug || [];
-      // Filter out empty slugs and locale names to avoid /docs/en/en or /docs/en/pt
+      // Handle empty slug as index page (use empty array, not ['index'])
       if (!Array.isArray(slug) || slug.length === 0) {
-        return null; // Skip empty slugs
+        return {
+          locale: 'en',
+          slug: [], // Empty array for index page
+        };
       }
+      // Filter out locale names to avoid /docs/en/en or /docs/en/pt
       const filteredSlug = slug.filter((s: string) => s && s !== 'en' && s !== 'pt');
-      // Only return if there's at least one valid slug segment
+      // If all segments were filtered out, treat as index
       if (filteredSlug.length === 0) {
-        return null;
+        return {
+          locale: 'en',
+          slug: [], // Empty array for index page
+        };
       }
       return {
         locale: 'en',
         slug: filteredSlug,
       };
-    })
-    .filter((p: any) => p !== null);
+    });
 
   const ptParams = sourcePt.generateParams()
     .map((params: any) => {
       const slug = params.slug || [];
-      // Filter out empty slugs and locale names to avoid /docs/pt/pt or /docs/pt/en
+      // Handle empty slug as index page (use empty array, not ['index'])
       if (!Array.isArray(slug) || slug.length === 0) {
-        return null; // Skip empty slugs
+        return {
+          locale: 'pt',
+          slug: [], // Empty array for index page
+        };
       }
+      // Filter out locale names to avoid /docs/pt/pt or /docs/pt/en
       const filteredSlug = slug.filter((s: string) => s && s !== 'en' && s !== 'pt');
-      // Only return if there's at least one valid slug segment
+      // If all segments were filtered out, treat as index
       if (filteredSlug.length === 0) {
-        return null;
+        return {
+          locale: 'pt',
+          slug: [], // Empty array for index page
+        };
       }
       return {
         locale: 'pt',
         slug: filteredSlug,
       };
-    })
-    .filter((p: any) => p !== null);
+    });
 
-  return [...enParams, ...ptParams];
+  // Add explicit index routes
+  const indexParams = [
+    { locale: 'en', slug: [] },
+    { locale: 'pt', slug: [] },
+    { locale: 'en', slug: ['index'] }, // Also support /docs/en/index
+    { locale: 'pt', slug: ['index'] }, // Also support /docs/pt/index
+  ];
+
+  return [...enParams, ...ptParams, ...indexParams];
 }
 
 export async function generateMetadata(props: {
@@ -108,7 +148,17 @@ export async function generateMetadata(props: {
   const { locale, slug } = params;
 
   const source = getSource(locale);
-  const page = source.getPage(slug || []);
+  let actualSlug: string[] = [];
+  
+  if (!slug || slug.length === 0) {
+    actualSlug = [];
+  } else if (slug.length === 1 && slug[0] === 'index') {
+    actualSlug = [];
+  } else {
+    actualSlug = slug;
+  }
+  
+  const page = source.getPage(actualSlug);
   
   if (!page) {
     notFound();

@@ -61,12 +61,12 @@ export function LanguageSwitcher() {
       // Extract the path after /docs/pt/
       const pathAfterLocale = newPath.replace('/docs/pt/', '');
       newPath = `/docs/${langCode}/${pathAfterLocale}`;
-    } else if (newPath.startsWith('/docs/en')) {
-      // Handle /docs/en (without trailing slash)
-      newPath = `/docs/${langCode}/getting-started/quick-start`;
-    } else if (newPath.startsWith('/docs/pt')) {
-      // Handle /docs/pt (without trailing slash)
-      newPath = `/docs/${langCode}/getting-started/quick-start`;
+    } else if (newPath === '/docs/en') {
+      // Handle /docs/en exactly (main docs page)
+      newPath = `/docs/${langCode}/index`;
+    } else if (newPath === '/docs/pt') {
+      // Handle /docs/pt exactly (main docs page)
+      newPath = `/docs/${langCode}/index`;
     } else if (newPath.startsWith('/docs/')) {
       // If no language prefix, add it
       newPath = newPath.replace('/docs/', `/docs/${langCode}/`);

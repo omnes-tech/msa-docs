@@ -316,8 +316,14 @@ for (const hash of userOpHashes) {
 **Note 1**: you need to convert the retrieved userOp hashes from hex to bytes array (`uint8` array) so that the returned signature from the passkey is in the right format.
 
 **Note 2**: you need to handle the returned authenticator data (`authenticatorData`), client data (`clientDataJSON`), and signature (`signature`): 
-- `authenticatorData`: convert it from bytes array to hex string. The result should be something like `0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000`;
-- `clientDataJSON`: from bytes array to stringified JSON (without `other_keys_can_be_added_here` field). The result should be something like `'{"type":"webauthn.get","challenge":"aGVsbG8gd2ViMw","origin":"http://localhost:3000","crossOrigin":false}'`;
+- `authenticatorData`: convert it from bytes array to hex string. The result should be something like:
+  ```
+  0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000
+  ```
+- `clientDataJSON`: from bytes array to stringified JSON (without `other_keys_can_be_added_here` field). The result should be something like:
+  ```json
+  '{"type":"webauthn.get","challenge":"aGVsbG8gd2ViMw","origin":"http://localhost:3000","crossOrigin":false}'
+  ```
 - `signature`: from bytes array in DER format to its respective R and S values.
 
 Now we can send the UserOperations to the blockchain:

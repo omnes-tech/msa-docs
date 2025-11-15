@@ -9,10 +9,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/docs/en', request.url));
   }
 
-  // Redirect old /docs/* routes to /docs/en/*
+  // Only redirect old /docs/* routes to /docs/en/* for truly old routes
+  // Be very conservative to avoid interfering with Fumadocs internal navigation
   if (pathname.startsWith('/docs/') && !pathname.startsWith('/docs/en/') && !pathname.startsWith('/docs/pt/')) {
     const slug = pathname.replace('/docs/', '');
-    return NextResponse.redirect(new URL(`/docs/en/${slug}`, request.url));
+
+    // Only redirect if it's a simple slug without subdirectories (old API routes)
+    // This avoids interfering with complex paths that Fumadocs might generate
+    if (slug && slug !== '/' && !slug.includes('/') && slug !== 'index') {
+      return NextResponse.redirect(new URL(`/docs/en/${slug}`, request.url));
+    }
   }
 
   return NextResponse.next();

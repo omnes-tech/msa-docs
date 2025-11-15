@@ -24,12 +24,12 @@ export const baseOptions: BaseLayoutProps = {
         <span>MSA API Docs</span>
       </>
     ),
-    url: '/', // Ensure url is always defined
+    url: '/', // Point to home page
   },
   // see https://fumadocs.dev/docs/ui/navigation/links
   links: [
     {
-      text: '',
+      type: 'custom' as const,
       children: <LanguageSwitcher />,
     },
   ],

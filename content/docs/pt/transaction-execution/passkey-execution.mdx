@@ -123,7 +123,7 @@ const encodedSignatures = passkeySignatures.map(sig => {
   );
 });
 
-// Execute with passkey signatures
+// Execute com assinaturas passkey
 const response = await smartWallet.provideSignaturesAndRequestSendUserOperations(
   result.userOps,
   result.accessList,
@@ -207,9 +207,9 @@ function parseDERSignature(derSignature: Uint8Array): { r: bigint; s: bigint } {
 
 ## Próximos Passos
 
-- **[Advanced Passkeys](/docs/advanced/passkeys)** - Deep dive into passkey implementation
-- **[Gas Estimation](/docs/transaction-execution/gas-estimation)** - Optimize transaction costs
-- **[Encoded Execution](/docs/transaction-execution/encoded-execution)** - Manual UserOp construction
+- **[Passkeys Avançadas](/docs/advanced/passkeys)** - Mergulhe na implementação de passkeys
+- **[Estimativa de Gas](/docs/transaction-execution/gas-estimation)** - Otimize custos de transação
+- **[Execução Encodada](/docs/transaction-execution/encoded-execution)** - Construção manual de UserOp
 
 ---
 

@@ -20,3 +20,23 @@
     transition: padding-left 0.2s ease;
   }
 }
+
+/* Fix code block overflow issues */
+pre {
+  overflow-x: auto;
+  max-width: 100%;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+code {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* Ensure long lines in code blocks wrap properly */
+pre code {
+  white-space: pre;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}

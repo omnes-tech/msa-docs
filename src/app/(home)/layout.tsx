@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <span>MSA API Docs</span>
         </>
       ),
-      url: '/', // Must be a string, not undefined - this is critical
+      url: '/', // Point to home page
     },
     // Add language switcher as a link
     links: [
