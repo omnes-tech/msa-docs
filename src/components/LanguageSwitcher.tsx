@@ -14,14 +14,20 @@ export function LanguageSwitcher() {
   const [currentLang, setCurrentLang] = useState('en');
 
   useEffect(() => {
-    // First check localStorage for saved preference
-    const savedLang = localStorage.getItem('preferred-language') as 'en' | 'pt' | null;
-    if (savedLang && (savedLang === 'en' || savedLang === 'pt')) {
-      setCurrentLang(savedLang);
+    // Always check pathname first to get the current language from URL
+    if (pathname?.startsWith('/docs/pt')) {
+      setCurrentLang('pt');
+      // Also save to localStorage
+      localStorage.setItem('preferred-language', 'pt');
+    } else if (pathname?.startsWith('/docs/en')) {
+      setCurrentLang('en');
+      // Also save to localStorage
+      localStorage.setItem('preferred-language', 'en');
     } else {
-      // Fallback to pathname detection
-      if (pathname?.startsWith('/docs/pt')) {
-        setCurrentLang('pt');
+      // Fallback to localStorage for saved preference
+      const savedLang = localStorage.getItem('preferred-language') as 'en' | 'pt' | null;
+      if (savedLang && (savedLang === 'en' || savedLang === 'pt')) {
+        setCurrentLang(savedLang);
       } else {
         setCurrentLang('en');
       }
@@ -34,6 +40,9 @@ export function LanguageSwitcher() {
     // Save language preference to localStorage
     localStorage.setItem('preferred-language', langCode);
     
+    // Update state immediately for UI feedback
+    setCurrentLang(langCode);
+    
     // Dispatch custom event to notify other components
     window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang: langCode } }));
 
@@ -41,7 +50,6 @@ export function LanguageSwitcher() {
     const currentPath = pathname || '/';
     if (currentPath === '/' || currentPath === '') {
       // Just update the language state, don't redirect
-      setCurrentLang(langCode);
       return;
     }
 
@@ -53,30 +61,35 @@ export function LanguageSwitcher() {
       newPath = '/docs';
     }
     
+    // Handle different path patterns
     if (newPath.startsWith('/docs/en/')) {
       // Extract the path after /docs/en/
       const pathAfterLocale = newPath.replace('/docs/en/', '');
-      newPath = `/docs/${langCode}/${pathAfterLocale}`;
+      // If empty, it's the index page
+      newPath = pathAfterLocale ? `/docs/${langCode}/${pathAfterLocale}` : `/docs/${langCode}/index`;
     } else if (newPath.startsWith('/docs/pt/')) {
       // Extract the path after /docs/pt/
       const pathAfterLocale = newPath.replace('/docs/pt/', '');
-      newPath = `/docs/${langCode}/${pathAfterLocale}`;
-    } else if (newPath === '/docs/en') {
+      // If empty, it's the index page
+      newPath = pathAfterLocale ? `/docs/${langCode}/${pathAfterLocale}` : `/docs/${langCode}/index`;
+    } else if (newPath === '/docs/en' || newPath === '/docs/en/') {
       // Handle /docs/en exactly (main docs page)
       newPath = `/docs/${langCode}/index`;
-    } else if (newPath === '/docs/pt') {
+    } else if (newPath === '/docs/pt' || newPath === '/docs/pt/') {
       // Handle /docs/pt exactly (main docs page)
       newPath = `/docs/${langCode}/index`;
     } else if (newPath.startsWith('/docs/')) {
       // If no language prefix, add it
-      newPath = newPath.replace('/docs/', `/docs/${langCode}/`);
-    } else if (newPath === '/docs') {
-      newPath = `/docs/${langCode}/getting-started/quick-start`;
+      const pathAfterDocs = newPath.replace('/docs/', '');
+      newPath = pathAfterDocs ? `/docs/${langCode}/${pathAfterDocs}` : `/docs/${langCode}/index`;
+    } else if (newPath === '/docs' || newPath === '/docs/') {
+      newPath = `/docs/${langCode}/index`;
     } else {
       // For other pages, don't redirect
       return;
     }
 
+    // Use router.push with replace to avoid adding to history
     router.push(newPath);
   };
 

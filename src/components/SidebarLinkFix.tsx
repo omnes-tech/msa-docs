@@ -61,11 +61,28 @@ export function SidebarLinkFix() {
       const href = link.getAttribute('href');
       if (!href) return;
       
+      // Special handling for /docs/pt or /docs/en (without /index)
+      // These should always be /docs/{locale}/index
+      if (href === '/docs/pt' || href === '/docs/en' || href === '/docs/pt/' || href === '/docs/en/') {
+        const correctHref = `/docs/${currentLocale}/index`;
+        link.setAttribute('href', correctHref);
+        link.setAttribute('data-href', correctHref);
+        // Also update any Next.js Link internal attributes
+        if (link.hasAttribute('data-nextjs-link')) {
+          link.setAttribute('data-nextjs-link', correctHref);
+        }
+        return;
+      }
+      
       const correctHref = getCorrectHref(href);
       if (correctHref && href !== correctHref) {
         link.setAttribute('href', correctHref);
         // Also update data attributes that might be used by Next.js Link
         link.setAttribute('data-href', correctHref);
+        // Also update any Next.js Link internal attributes
+        if (link.hasAttribute('data-nextjs-link')) {
+          link.setAttribute('data-nextjs-link', correctHref);
+        }
       }
     };
     
@@ -96,12 +113,26 @@ export function SidebarLinkFix() {
       const nextLinks = sidebar.querySelectorAll('[data-nextjs-link], [href]');
       nextLinks.forEach((link) => {
         const href = link.getAttribute('href');
-        if (href) {
-          const correctHref = getCorrectHref(href);
-          if (correctHref && href !== correctHref) {
-            link.setAttribute('href', correctHref);
-            // Also update data attributes
-            link.setAttribute('data-href', correctHref);
+        if (!href) return;
+        
+        // Special handling for /docs/pt or /docs/en (without /index)
+        if (href === '/docs/pt' || href === '/docs/en' || href === '/docs/pt/' || href === '/docs/en/') {
+          const correctHref = `/docs/${currentLocale}/index`;
+          link.setAttribute('href', correctHref);
+          link.setAttribute('data-href', correctHref);
+          if (link.hasAttribute('data-nextjs-link')) {
+            link.setAttribute('data-nextjs-link', correctHref);
+          }
+          return;
+        }
+        
+        const correctHref = getCorrectHref(href);
+        if (correctHref && href !== correctHref) {
+          link.setAttribute('href', correctHref);
+          // Also update data attributes
+          link.setAttribute('data-href', correctHref);
+          if (link.hasAttribute('data-nextjs-link')) {
+            link.setAttribute('data-nextjs-link', correctHref);
           }
         }
       });
@@ -149,6 +180,16 @@ export function SidebarLinkFix() {
       const href = link.getAttribute('href') || link.getAttribute('data-href');
       if (!href) return;
       
+      // Special handling for /docs/pt or /docs/en (without /index)
+      // These should always go to /docs/{locale}/index
+      if (href === '/docs/pt' || href === '/docs/en' || href === '/docs/pt/' || href === '/docs/en/') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        router.push(`/docs/${currentLocale}/index`);
+        return false;
+      }
+      
       const correctHref = getCorrectHref(href);
       if (correctHref && href !== correctHref) {
         e.preventDefault();
@@ -161,10 +202,64 @@ export function SidebarLinkFix() {
     
     // Fix links immediately and repeatedly
     fixSidebarLinks();
-    const fixInterval = setInterval(fixSidebarLinks, 200);
+    const fixInterval = setInterval(fixSidebarLinks, 100);
     
     // Add click listener to document to intercept all clicks - use capture phase
+    // Use capture phase to intercept before Next.js Link handles it
     document.addEventListener('click', handleClick, true);
+    
+    // Also intercept on mousedown to catch it even earlier
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a[href], [href], [data-href]') as HTMLElement;
+      if (!link) return;
+      
+      // Try multiple selectors to find the sidebar
+      const sidebarSelectors = [
+        '[data-sidebar]',
+        'aside',
+        '[role="complementary"]',
+        'nav[aria-label*="sidebar" i]',
+        'nav[aria-label*="navigation" i]'
+      ];
+      
+      let sidebar: Element | null = null;
+      for (const selector of sidebarSelectors) {
+        sidebar = document.querySelector(selector);
+        if (sidebar && sidebar.contains(link)) break;
+      }
+      
+      if (!sidebar || !sidebar.contains(link)) return;
+      
+      const href = link.getAttribute('href') || link.getAttribute('data-href');
+      if (!href) return;
+      
+      // Special handling for /docs/pt or /docs/en (without /index)
+      if (href === '/docs/pt' || href === '/docs/en' || href === '/docs/pt/' || href === '/docs/en/') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        // Use setTimeout to ensure navigation happens after event propagation
+        setTimeout(() => {
+          router.push(`/docs/${currentLocale}/index`);
+        }, 0);
+        return false;
+      }
+      
+      const correctHref = getCorrectHref(href);
+      if (correctHref && href !== correctHref) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        // Use setTimeout to ensure navigation happens after event propagation
+        setTimeout(() => {
+          router.push(correctHref);
+        }, 0);
+        return false;
+      }
+    };
+    
+    document.addEventListener('mousedown', handleMouseDown, true);
     
     // Also fix links when the DOM changes (for dynamic content)
     const observer = new MutationObserver(() => {
@@ -198,6 +293,7 @@ export function SidebarLinkFix() {
     return () => {
       clearInterval(fixInterval);
       document.removeEventListener('click', handleClick, true);
+      document.removeEventListener('mousedown', handleMouseDown, true);
       observer.disconnect();
     };
   }, [pathname, router]);

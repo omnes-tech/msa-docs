@@ -6,7 +6,13 @@ export function middleware(request: NextRequest) {
 
   // Redirect /docs to /docs/en
   if (pathname === '/docs' || pathname === '/docs/') {
-    return NextResponse.redirect(new URL('/docs/en', request.url));
+    return NextResponse.redirect(new URL('/docs/en/index', request.url));
+  }
+
+  // Handle /docs/en or /docs/pt (without trailing slash) - redirect to index
+  if (pathname === '/docs/en' || pathname === '/docs/pt') {
+    const locale = pathname === '/docs/en' ? 'en' : 'pt';
+    return NextResponse.redirect(new URL(`/docs/${locale}/index`, request.url));
   }
 
   // Only redirect old /docs/* routes to /docs/en/* for truly old routes

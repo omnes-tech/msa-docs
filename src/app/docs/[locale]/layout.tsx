@@ -167,15 +167,18 @@ export default async function Layout({
   const source = getSource(locale);
   
   // Get the pageTree from source
-  let pageTree = source.pageTree;
+  const pageTree = source.pageTree;
   
   // Log pageTree structure in development to verify titles are correct
   if (process.env.NODE_ENV === 'development') {
     if (Array.isArray(pageTree)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       console.log(`[Layout ${locale}] PageTree titles (BEFORE normalization):`, JSON.stringify(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         pageTree.map((item: any) => ({
           title: item.title || item.name,
           url: item.url || item.href,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           children: item.children?.map((child: any) => ({
             title: child.title || child.name,
             url: child.url || child.href,
@@ -195,10 +198,13 @@ export default async function Layout({
   
   // Log after normalization to verify titles are preserved
   if (process.env.NODE_ENV === 'development' && Array.isArray(normalizedTree)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.log(`[Layout ${locale}] PageTree titles (AFTER normalization):`, JSON.stringify(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       normalizedTree.map((item: any) => ({
         title: item.title || item.name,
         url: item.url || item.href,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         children: item.children?.map((child: any) => ({
           title: child.title || child.name,
           url: child.url || child.href,
@@ -217,15 +223,27 @@ export default async function Layout({
     const firstItem = normalizedTree[0] as any;
     const indexUrl = `/docs/${locale}/index`;
     
+    // Check if this is the index page by title or name
+    const isIndexPage = firstItem.name === 'index' ||
+                       firstItem.title === 'Documentação da API MSA' ||
+                       firstItem.title === 'MSA API Documentation' ||
+                       !firstItem.url || 
+                       firstItem.url === `/docs/${locale}` ||
+                       firstItem.url === `/docs/${locale}/` ||
+                       firstItem.url === `/docs/en` ||
+                       firstItem.url === `/docs/pt`;
     
     // Force all URL properties to use the correct locale for index
     const urlProperties = ['url', 'href', 'link', 'path', 'slug', 'name'];
-    for (const prop of urlProperties) {
-      if (prop === 'name' && firstItem[prop] === 'index') {
-        // Keep name as 'index' but ensure URL is correct
-        continue;
+    
+    if (isIndexPage) {
+      for (const prop of urlProperties) {
+        if (prop === 'name' && firstItem[prop] === 'index') {
+          // Keep name as 'index' but ensure URL is correct
+          continue;
+        }
+        firstItem[prop] = indexUrl;
       }
-      firstItem[prop] = indexUrl;
     }
     
     // Also update nested item if present
