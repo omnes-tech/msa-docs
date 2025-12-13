@@ -3,8 +3,6 @@ title: Execução de Transações Passkey
 description: Execute transações usando autenticação passkey com assinaturas WebAuthn.
 ---
 
-# Execução de Transações Passkey
-
 Execute transações usando autenticação passkey (WebAuthn). Isso possibilita assinatura de transações sem senha baseada em biometria sem gerenciar chaves privadas.
 
 ## Visão Geral
@@ -213,8 +211,8 @@ function parseDERSignature(derSignature: Uint8Array): { r: bigint; s: bigint } {
 
 ---
 
-<div className="mt-8 p-4 bg-blue-50 rounded-lg">
-  <div className="text-blue-800">
+<div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
     <strong>🔐 Passwordless Experience:</strong> Passkey execution provides a seamless, secure way to sign transactions without managing private keys.
   </div>
 </div>

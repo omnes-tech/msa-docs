@@ -3,8 +3,6 @@ title: Criando Carteiras
 description: Aprenda como criar carteiras Account Abstraction usando a API MSA com vários tipos de custody e configurações.
 ---
 
-# Criando Carteiras
-
 Criar carteiras com a API MSA é simples. Este guia cobre tudo que você precisa saber sobre implantar carteiras de smart contract com diferentes configurações de custody.
 
 ## Visão Geral
@@ -118,7 +116,7 @@ curl -X POST "https://api.msa.omnes.tech/create" \
 </Tab>
 </Tabs>
 
-**Expected Response:**
+**Resposta Esperada:**
 
 ```json
 {
@@ -314,7 +312,7 @@ try {
   } else if (error.message.includes('Invalid client ID')) {
     console.error('Check your Fireblocks credentials');
   } else {
-    console.error('Error:', error.message);
+    console.error('Erro:', error.message);
   }
 }
 ```
@@ -376,8 +374,8 @@ console.log('Transaction hash:', result.response.txHash);
 
 ---
 
-<div className="mt-8 p-4 bg-green-50 rounded-lg">
-  <div className="text-green-800">
+<div className="mt-8 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <div className="text-green-800 dark:text-green-200">
     <strong>✅ Wallet Created!</strong> Your wallet is now ready to use. You can start executing transactions and managing your Account Abstraction wallet.
   </div>
 </div>

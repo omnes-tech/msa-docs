@@ -75,7 +75,7 @@ export default function HomePage() {
   const docsPrefix = `/docs/${lang}`;
 
   return (
-    <main className="flex flex-1 flex-col justify-center items-center text-center px-6">
+    <main className="flex flex-1 flex-col justify-center items-center text-center px-6 py-12">
       <div className="mb-8">
         <Image
           src="/logo-omnes.svg"
@@ -85,10 +85,10 @@ export default function HomePage() {
           className="mx-auto mb-6"
           priority
         />
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent animate-gradient">
           {t.title}
         </h1>
-        <p className="text-xl text-fd-muted-foreground max-w-2xl mx-auto mb-8">
+        <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-12 leading-relaxed">
           {t.description}
         </p>
       </div>
@@ -96,42 +96,48 @@ export default function HomePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full mb-8">
         <Link
           href={`${docsPrefix}/getting-started/quick-start`}
-          className="block p-6 border rounded-lg hover:bg-gray-50 transition-colors"
+          className="group block p-6 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/50 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-300"
         >
-          <div className="text-3xl mb-2">⚡</div>
-          <h3 className="font-semibold mb-2">{t.quickStart}</h3>
-          <p className="text-sm text-fd-muted-foreground">
+          <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">⚡</div>
+          <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
+            {t.quickStart}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">
             {t.quickStartDesc}
           </p>
         </Link>
 
         <Link
           href={`${docsPrefix}/api-reference/interactive-docs`}
-          className="block p-6 border rounded-lg hover:bg-gray-50 transition-colors"
+          className="group block p-6 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/50 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-300"
         >
-          <div className="text-3xl mb-2">🔧</div>
-          <h3 className="font-semibold mb-2">{t.interactiveAPI}</h3>
-          <p className="text-sm text-fd-muted-foreground">
+          <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">🔧</div>
+          <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
+            {t.interactiveAPI}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">
             {t.interactiveAPIDesc}
           </p>
         </Link>
 
         <Link
           href={`${docsPrefix}/sdk/typescript-sdk`}
-          className="block p-6 border rounded-lg hover:bg-gray-50 transition-colors"
+          className="group block p-6 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/50 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-300"
         >
-          <div className="text-3xl mb-2">📦</div>
-          <h3 className="font-semibold mb-2">{t.typescriptSDK}</h3>
-          <p className="text-sm text-fd-muted-foreground">
+          <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">📦</div>
+          <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
+            {t.typescriptSDK}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">
             {t.typescriptSDKDesc}
           </p>
         </Link>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-8">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-12">
         <Link
           href={`${docsPrefix}/getting-started/quick-start`}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+          className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base"
         >
           {t.exploreDocs}
         </Link>
@@ -139,44 +145,44 @@ export default function HomePage() {
           href="https://calendly.com/omnes-blockchain/30min?month=2025-11"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+          className="px-8 py-3.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base"
         >
           {t.contactUs}
         </a>
       </div>
 
-      <footer className="mt-12 w-full border-t pt-8 pb-6">
-        <div className="text-center space-y-4">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-fd-muted-foreground">
+      <footer className="mt-16 w-full border-t border-gray-200 dark:border-gray-700 pt-10 pb-8">
+        <div className="text-center space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm">
             <a
               href="https://omnes.dev/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-blue-600 transition-colors font-medium"
+              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
             >
               {t.visitOmnes}
             </a>
-            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline text-gray-400 dark:text-gray-500">•</span>
             <a
               href="mailto:gus@omnes.dev"
-              className="hover:text-blue-600 transition-colors font-medium"
+              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
             >
               {t.sendEmail}
             </a>
-            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline text-gray-400 dark:text-gray-500">•</span>
             <a
               href="https://calendly.com/omnes-blockchain/30min?month=2025-11"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-blue-600 transition-colors font-medium"
+              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
             >
               {t.scheduleMeeting}
             </a>
           </div>
-          <p className="text-sm text-fd-muted-foreground">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {t.builtBy}
           </p>
-          <p className="text-sm text-fd-muted-foreground">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {t.makingAA}
           </p>
         </div>

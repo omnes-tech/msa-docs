@@ -3,8 +3,6 @@ title: Autenticação Passkey
 description: Guia completo para carteiras baseadas em passkey com integração WebAuthn, registro e assinatura de transações.
 ---
 
-# Autenticação Passkey
-
 Carteiras passkey fornecem autenticação sem senha baseada em biometria sem gerenciar chaves privadas. Este guia cobre integração completa de passkey com a API MSA.
 
 ## Visão Geral
@@ -369,8 +367,8 @@ const { r, s } = parseDERSignature(response.signature);
 
 ---
 
-<div className="mt-8 p-4 bg-blue-50 rounded-lg">
-  <div className="text-blue-800">
+<div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
     <strong>🔐 Passwordless Future:</strong> Passkey wallets provide the best user experience with biometric security.
   </div>
 </div>

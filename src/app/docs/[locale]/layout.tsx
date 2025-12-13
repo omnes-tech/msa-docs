@@ -4,6 +4,17 @@ import { baseOptions } from '@/app/layout.config';
 import { getSource } from '@/lib/source';
 import { SidebarLinkFix } from '@/components/SidebarLinkFix';
 
+// Mapping of English titles to Portuguese titles for sidebar sections
+const titleTranslations: Record<string, string> = {
+  'Getting Started': 'Primeiros Passos',
+  'Wallet Management': 'Gerenciamento de Carteiras',
+  'Transaction Execution': 'Execução de Transações',
+  'Integration Examples': 'Exemplos de Integração',
+  'API Reference': 'Referência da API',
+  'Advanced': 'Avançado',
+  'MSA API Documentation': 'Documentação da API MSA',
+};
+
 // Helper function to normalize pageTree URLs to use the correct locale
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalizePageTreeUrls(tree: any, locale: string): any {
@@ -15,6 +26,14 @@ function normalizePageTreeUrls(tree: any, locale: string): any {
   return tree.map((item: any) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const normalized: any = { ...item };
+    
+    // If locale is Portuguese, translate titles from English to Portuguese
+    if (locale === 'pt' && normalized.title && titleTranslations[normalized.title]) {
+      normalized.title = titleTranslations[normalized.title];
+    }
+    
+    // Preserve title and name properties - they should come from meta.json
+    // Don't override titles during normalization
     
     // Fix the URL to use the correct locale
     // Check multiple possible URL properties (Fumadocs may use different names)
@@ -50,26 +69,36 @@ function normalizePageTreeUrls(tree: any, locale: string): any {
       // Check if this is the index page
       const isIndexPage = normalized.name === 'index' ||
                          normalized.title === 'Documentação da API MSA' ||
-                         normalized.title === 'MSA API Documentation';
-
+                         normalized.title === 'MSA API Documentation' ||
+                         urlProperty === '/docs/en' ||
+                         urlProperty === '/docs/pt' ||
+                         urlProperty === '/docs/en/' ||
+                         urlProperty === '/docs/pt/';
 
       // Only normalize if it has wrong locale OR if it's the index page that needs specific handling
-      const needsNormalization = hasWrongLocale || (!hasCorrectLocale && isIndexPage);
+      const needsNormalization = hasWrongLocale || (!hasCorrectLocale && isIndexPage) || 
+                                 urlProperty === '/docs/en' || urlProperty === '/docs/pt' ||
+                                 urlProperty === '/docs/en/' || urlProperty === '/docs/pt/';
 
       if (needsNormalization) {
         let path = urlProperty;
       
-      // Remove any existing locale prefix (/docs/en/ or /docs/pt/)
-      path = path.replace(/^\/docs\/(en|pt)\//, '/');
-      path = path.replace(/^\/docs\/(en|pt)$/, '');
-      
-      // Handle relative paths (starting with ./ or just the path)
-      if (path.startsWith('./')) {
-        path = path.slice(2);
-      }
-      
-      // Remove leading slash if present
-      path = path.startsWith('/') ? path.slice(1) : path;
+        // Handle /docs/en or /docs/pt (without trailing slash or path)
+        if (path === '/docs/en' || path === '/docs/pt' || path === '/docs/en/' || path === '/docs/pt/') {
+          path = 'index';
+        } else {
+          // Remove any existing locale prefix (/docs/en/ or /docs/pt/)
+          path = path.replace(/^\/docs\/(en|pt)\//, '/');
+          path = path.replace(/^\/docs\/(en|pt)$/, '');
+          
+          // Handle relative paths (starting with ./ or just the path)
+          if (path.startsWith('./')) {
+            path = path.slice(2);
+          }
+          
+          // Remove leading slash if present
+          path = path.startsWith('/') ? path.slice(1) : path;
+        }
       
         // Handle empty path or index - this is the main index page
         const fixedUrl = (path === 'index' || path === '' || path === '/')
@@ -137,8 +166,48 @@ export default async function Layout({
   const { locale } = await params;
   const source = getSource(locale);
   
+  // Get the pageTree from source
+  let pageTree = source.pageTree;
+  
+  // Log pageTree structure in development to verify titles are correct
+  if (process.env.NODE_ENV === 'development') {
+    if (Array.isArray(pageTree)) {
+      console.log(`[Layout ${locale}] PageTree titles (BEFORE normalization):`, JSON.stringify(
+        pageTree.map((item: any) => ({
+          title: item.title || item.name,
+          url: item.url || item.href,
+          children: item.children?.map((child: any) => ({
+            title: child.title || child.name,
+            url: child.url || child.href,
+          })),
+        })),
+        null,
+        2
+      ));
+    } else {
+      console.log(`[Layout ${locale}] PageTree structure:`, typeof pageTree, pageTree);
+    }
+  }
+  
   // Normalize pageTree URLs to ensure they use the correct locale
-  let normalizedTree = normalizePageTreeUrls(source.pageTree, locale);
+  // IMPORTANT: This preserves titles from meta.json, only fixes URLs
+  const normalizedTree = normalizePageTreeUrls(pageTree, locale);
+  
+  // Log after normalization to verify titles are preserved
+  if (process.env.NODE_ENV === 'development' && Array.isArray(normalizedTree)) {
+    console.log(`[Layout ${locale}] PageTree titles (AFTER normalization):`, JSON.stringify(
+      normalizedTree.map((item: any) => ({
+        title: item.title || item.name,
+        url: item.url || item.href,
+        children: item.children?.map((child: any) => ({
+          title: child.title || child.name,
+          url: child.url || child.href,
+        })),
+      })),
+      null,
+      2
+    ));
+  }
 
 
   // Force the first item (index page) to have the correct URL

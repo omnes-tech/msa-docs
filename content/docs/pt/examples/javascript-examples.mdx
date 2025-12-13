@@ -3,8 +3,6 @@ title: Exemplos JavaScript
 description: Exemplos completos em JavaScript para chamar a API MSA diretamente usando HTTP fetch.
 ---
 
-# Exemplos JavaScript
-
 Exemplos completos em JavaScript para chamar a API MSA diretamente usando HTTP fetch. Estes exemplos usam APIs nativas do navegador para fazer chamadas diretas da API - não há SDK JavaScript, apenas o SDK TypeScript está disponível.
 
 ## Configuração
@@ -212,7 +210,7 @@ async function completeWalletWorkflow(userSalt, signer) {
       txHash: txResult.txHash
     };
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Erro:', error);
     throw error;
   }
 }
@@ -251,8 +249,8 @@ async function safeExecute(operation, signer) {
 
 ---
 
-<div className="mt-8 p-4 bg-blue-50 rounded-lg">
-  <div className="text-blue-800">
+<div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
     <strong>💡 Tip:</strong> Use the TypeScript SDK for better type safety and IntelliSense support in your JavaScript projects.
   </div>
 </div>

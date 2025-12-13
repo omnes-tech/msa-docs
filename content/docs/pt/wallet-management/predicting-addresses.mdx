@@ -3,8 +3,6 @@ title: Prevendo Endereços de Carteira
 description: Preveja endereços de carteira antes da implantação usando a geração determinística de endereços da API MSA.
 ---
 
-# Prevendo Endereços de Carteira
-
 A API MSA permite que você preveja endereços de carteira antes que elas sejam implantadas. Isso é essencial para financiar carteiras antes da criação e garantir geração determinística de endereços.
 
 ## Visão Geral
@@ -122,7 +120,7 @@ curl -X POST "https://api.msa.omnes.tech/predict" \
 </Tab>
 </Tabs>
 
-**Expected Response:**
+**Resposta Esperada:**
 
 ```json
 {
@@ -430,8 +428,8 @@ try {
 
 ---
 
-<div className="mt-8 p-4 bg-blue-50 rounded-lg">
-  <div className="text-blue-800">
+<div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
     <strong>💡 Pro Tip:</strong> Always predict wallet addresses before creating them. This allows you to pre-fund wallets, verify addresses, and ensure deterministic behavior across deployments.
   </div>
 </div>

@@ -18,9 +18,8 @@ export function SidebarLinkFix() {
     const getCorrectHref = (href: string): string | null => {
       if (!href) return null;
 
-
-      // Handle /docs/en or /docs/pt (without trailing path)
-      if (href === '/docs/en' || href === '/docs/pt') {
+      // Handle /docs/en or /docs/pt (without trailing path or index)
+      if (href === '/docs/en' || href === '/docs/pt' || href === '/docs/en/' || href === '/docs/pt/') {
         return `/docs/${currentLocale}/index`;
       }
 
@@ -35,12 +34,16 @@ export function SidebarLinkFix() {
         if (pathMatch) {
           const [, wrongLocale, path] = pathMatch;
           if (wrongLocale !== currentLocale) {
-            // If no path, it's the index
-            if (!path || path === '/') {
+            // If no path or just '/', it's the index
+            if (!path || path === '/' || path === '') {
               return `/docs/${currentLocale}/index`;
             }
             // Otherwise, use the path with correct locale
             return `/docs/${currentLocale}${path}`;
+          }
+          // Even if locale matches, ensure index pages are explicit
+          if (!path || path === '/' || path === '') {
+            return `/docs/${currentLocale}/index`;
           }
         } else {
           // Handle cases where href might be just '/docs/' or similar - redirect to correct locale index
@@ -68,20 +71,53 @@ export function SidebarLinkFix() {
     
     // Function to fix all links in the sidebar
     const fixSidebarLinks = () => {
-      const sidebar = document.querySelector('[data-sidebar]');
+      // Try multiple selectors to find the sidebar
+      const sidebarSelectors = [
+        '[data-sidebar]',
+        'aside',
+        '[role="complementary"]',
+        'nav[aria-label*="sidebar" i]',
+        'nav[aria-label*="navigation" i]'
+      ];
+      
+      let sidebar: Element | null = null;
+      for (const selector of sidebarSelectors) {
+        sidebar = document.querySelector(selector);
+        if (sidebar) break;
+      }
+      
       if (!sidebar) return;
       
+      // Fix all anchor tags
       const links = sidebar.querySelectorAll('a[href]');
       links.forEach((link) => fixLink(link as HTMLAnchorElement));
       
       // Also check for Next.js Link components (they might have different structure)
-      const nextLinks = sidebar.querySelectorAll('[data-nextjs-link]');
+      const nextLinks = sidebar.querySelectorAll('[data-nextjs-link], [href]');
       nextLinks.forEach((link) => {
         const href = link.getAttribute('href');
         if (href) {
           const correctHref = getCorrectHref(href);
           if (correctHref && href !== correctHref) {
             link.setAttribute('href', correctHref);
+            // Also update data attributes
+            link.setAttribute('data-href', correctHref);
+          }
+        }
+      });
+      
+      // Fix any elements that might have href in data attributes
+      const elementsWithHref = sidebar.querySelectorAll('[data-href]');
+      elementsWithHref.forEach((el) => {
+        const href = el.getAttribute('data-href');
+        if (href) {
+          const correctHref = getCorrectHref(href);
+          if (correctHref && href !== correctHref) {
+            el.setAttribute('data-href', correctHref);
+            // Also update href if it exists
+            if (el.hasAttribute('href')) {
+              el.setAttribute('href', correctHref);
+            }
           }
         }
       });
@@ -90,13 +126,27 @@ export function SidebarLinkFix() {
     // Intercept clicks on sidebar links - be very aggressive
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const link = target.closest('a[href]') as HTMLAnchorElement;
+      const link = target.closest('a[href], [href], [data-href]') as HTMLElement;
       if (!link) return;
       
-      const sidebar = document.querySelector('[data-sidebar]');
+      // Try multiple selectors to find the sidebar
+      const sidebarSelectors = [
+        '[data-sidebar]',
+        'aside',
+        '[role="complementary"]',
+        'nav[aria-label*="sidebar" i]',
+        'nav[aria-label*="navigation" i]'
+      ];
+      
+      let sidebar: Element | null = null;
+      for (const selector of sidebarSelectors) {
+        sidebar = document.querySelector(selector);
+        if (sidebar && sidebar.contains(link)) break;
+      }
+      
       if (!sidebar || !sidebar.contains(link)) return;
       
-      const href = link.getAttribute('href');
+      const href = link.getAttribute('href') || link.getAttribute('data-href');
       if (!href) return;
       
       const correctHref = getCorrectHref(href);
@@ -121,9 +171,23 @@ export function SidebarLinkFix() {
       fixSidebarLinks();
     });
     
-    const sidebar = document.querySelector('[data-sidebar]');
-    if (sidebar) {
-      observer.observe(sidebar, {
+    // Try multiple selectors to find the sidebar for observer
+    const sidebarSelectors = [
+      '[data-sidebar]',
+      'aside',
+      '[role="complementary"]',
+      'nav[aria-label*="sidebar" i]',
+      'nav[aria-label*="navigation" i]'
+    ];
+    
+    let sidebarForObserver: Element | null = null;
+    for (const selector of sidebarSelectors) {
+      sidebarForObserver = document.querySelector(selector);
+      if (sidebarForObserver) break;
+    }
+    
+    if (sidebarForObserver) {
+      observer.observe(sidebarForObserver, {
         childList: true,
         subtree: true,
         attributes: true,

@@ -3,8 +3,6 @@ title: Documentação da API MSA
 description: Uma API poderosa para criar e gerenciar carteiras Account Abstraction (AA) com suporte a multi-assinatura e passkeys.
 ---
 
-# Documentação da API MSA
-
 Bem-vindo à documentação da **API MSA (Multi-Signature Account)**. Esta API abrangente permite criar e gerenciar carteiras Account Abstraction (AA) com recursos avançados de segurança, incluindo validação multi-assinatura, autenticação passkey e assinatura HSM/MPC.
 
 ## O que é a API MSA?
@@ -109,24 +107,24 @@ A API MSA fornece as seguintes categorias principais de endpoints:
 ## Links Rápidos
 
 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-  <a href="/docs/getting-started/quick-start" className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+  <a href="/docs/getting-started/quick-start" className="block p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
     <h3 className="font-semibold">⚡ Guia de Início Rápido</h3>
-    <div className="text-gray-600">Crie sua primeira carteira em 5 minutos</div>
+    <div className="text-gray-600 dark:text-gray-400">Crie sua primeira carteira em 5 minutos</div>
   </a>
   
-  <a href="/docs/api-reference/interactive-docs" className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+  <a href="/docs/api-reference/interactive-docs" className="block p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
     <h3 className="font-semibold">🔧 Referência Interativa da API</h3>
-    <div className="text-gray-600">Teste a API diretamente no seu navegador</div>
+    <div className="text-gray-600 dark:text-gray-400">Teste a API diretamente no seu navegador</div>
   </a>
   
-  <a href="/docs/sdk/typescript-sdk" className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+  <a href="/docs/sdk/typescript-sdk" className="block p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
     <h3 className="font-semibold">📦 SDK TypeScript</h3>
-    <div className="text-gray-600">Integre com código TypeScript com segurança de tipos</div>
+    <div className="text-gray-600 dark:text-gray-400">Integre com código TypeScript com segurança de tipos</div>
   </a>
   
-  <a href="/docs/wallet-management/custody-types" className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+  <a href="/docs/wallet-management/custody-types" className="block p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
     <h3 className="font-semibold">🔐 Tipos de Custody</h3>
-    <div className="text-gray-600">Escolha a configuração de carteira correta</div>
+    <div className="text-gray-600 dark:text-gray-400">Escolha a configuração de carteira correta</div>
   </a>
 </div>
 
@@ -154,36 +152,36 @@ A API MSA é construída com tecnologias modernas:
 
 ---
 
-<div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+<div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
   <div className="text-center">
-    <div className="text-blue-900 mb-4">
-      <strong>🚀 Pronto para Construir?</strong> Comece com nosso <a href="/docs/getting-started/quick-start" className="font-semibold underline">Guia de Início Rápido</a> ou explore a <a href="/docs/api-reference/interactive-docs" className="font-semibold underline">Referência Interativa da API</a> para testar endpoints diretamente no seu navegador.
+    <div className="text-blue-900 dark:text-blue-100 mb-4 text-base leading-relaxed">
+      <strong className="text-blue-950 dark:text-blue-50">🚀 Pronto para Construir?</strong> Comece com nosso <a href="/docs/getting-started/quick-start" className="font-semibold underline text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200">Guia de Início Rápido</a> ou explore a <a href="/docs/api-reference/interactive-docs" className="font-semibold underline text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200">Referência Interativa da API</a> para testar endpoints diretamente no seu navegador.
     </div>
     <div className="flex flex-col sm:flex-row gap-3 justify-center">
       <a
         href="https://calendly.com/omnes-blockchain/30min?month=2025-11"
         target="_blank"
         rel="noopener noreferrer"
-        className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold text-center"
+        className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold text-center no-underline"
       >
         📅 Entre em Contato - Solicitar Acesso
       </a>
       <a
         href="mailto:gus@omnes.dev"
-        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-center"
+        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-center no-underline"
       >
         📧 Enviar Email
       </a>
     </div>
-    <div className="text-sm text-blue-700 mt-4">
+    <div className="text-sm text-blue-800 dark:text-blue-200 mt-4">
       Precisa de uma chave privada para começar? Entre em contato conosco para solicitar acesso e começar a usar a API MSA.
     </div>
   </div>
 </div>
 
-<div className="mt-4 p-4 bg-blue-50 rounded-lg">
-  <div className="text-blue-800">
-    <strong>Precisa de Ajuda?</strong> Junte-se à nossa <a href="https://discord.gg/omnes" className="font-semibold underline">comunidade Discord</a> ou consulte o <a href="/docs/advanced/troubleshooting" className="font-semibold underline">guia de solução de problemas</a> para problemas comuns.
+<div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-900 dark:text-blue-100">
+    <strong className="text-blue-950 dark:text-blue-50">Precisa de Ajuda?</strong> Junte-se à nossa <a href="https://discord.gg/omnes" className="font-semibold underline text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200">comunidade Discord</a> ou consulte o <a href="/docs/advanced/troubleshooting" className="font-semibold underline text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200">guia de solução de problemas</a> para problemas comuns.
   </div>
 </div>
 

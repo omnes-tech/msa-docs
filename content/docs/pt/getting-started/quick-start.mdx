@@ -3,8 +3,6 @@ title: Guia de Início Rápido
 description: Crie sua primeira carteira Account Abstraction em 5 minutos com a API MSA.
 ---
 
-# Guia de Início Rápido
-
 Este guia irá orientá-lo na criação de sua primeira carteira Account Abstraction usando a API MSA. Você aprenderá o fluxo de trabalho essencial e verá exemplos práticos em múltiplas linguagens de programação.
 
 ## Pré-requisitos
@@ -48,23 +46,23 @@ Primeiro, configure seu ambiente e inicialize o SDK com sua chave da API e signa
 ```typescript
 import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
 
-// Load environment variables
+// Carregar variáveis de ambiente
 const apiKey = process.env.API_KEY!;
 const rpcURL = process.env.RPC_URL!;
-const privateKey = process.env.PRIVATE_KEY!; // For testing only
+const privateKey = process.env.PRIVATE_KEY!; // Apenas para testes
 
-// Create a signer
+// Criar um signatário
 const signer = await PKSigner.create(privateKey as `0x${string}`);
 
-// Initialize SmartWallet with API key
+// Inicializar SmartWallet com chave da API
 const smartWallet = await SmartWallet.create(
-  signer.signMessage,           // Message sign method
-  signer.signMessage,           // UserOp hash sign method
-  signer.getEVMAddress(),       // Signer address
-  rpcURL,                       // RPC endpoint
-  apiKey,                       // Your API key (required!)
-  null,                         // Contracts (null = fetch from API)
-  false                         // Use remote bundler
+  signer.signMessage,           // Método de assinatura de mensagem
+  signer.signMessage,           // Método de assinatura de hash UserOp
+  signer.getEVMAddress(),       // Endereço do signatário
+  rpcURL,                       // Endpoint RPC
+  apiKey,                       // Sua chave da API (obrigatória!)
+  null,                         // Contratos (null = buscar da API)
+  false                         // Usar bundler remoto
 );
 
 console.log('SmartWallet initialized successfully!');
@@ -73,18 +71,18 @@ console.log('SmartWallet initialized successfully!');
 ### Usando API HTTP (fetch)
 
 ```typescript
-// Using API HTTP (fetch) for operations not covered by SmartWallet SDK
+// Usando API HTTP (fetch) para operações não cobertas pelo SmartWallet SDK
 const response = await fetch('https://api.msa.omnes.tech/create', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': process.env.API_KEY! // API key for authentication
+    'X-API-Key': process.env.API_KEY! // Chave da API para autenticação
   },
   body: JSON.stringify({
-    accounts: [{
-      walletCustody: 1, // ECDSA_VALIDATOR
-      salt: 'user@example.com'
-    }],
+      accounts: [{
+        walletCustody: 1, // ECDSA_VALIDATOR (1)
+        salt: 'user@example.com'
+      }],
     settings: {
       rpc: 'https://rpc-amoy.polygon.technology/',
       factory: '0xb09Fd1134553a43A3E02182a6B04F4dEBa7476F4',
@@ -128,7 +126,7 @@ Preveja o endereço da carteira antes de implantar. Isso é útil para financiar
 ```typescript
 import { SmartWallet, PKSigner, AccountOperations } from '@omnes/smartwallet-ts-sdk';
 
-// Initialize (as shown in Step 1)
+// Inicializar (como mostrado no Passo 1)
 const signer = await PKSigner.create(privateKey as `0x${string}`);
 const smartWallet = await SmartWallet.create(
   signer.signMessage,
@@ -140,20 +138,20 @@ const smartWallet = await SmartWallet.create(
   false
 );
 
-// Predict wallet address
+// Prever endereço da carteira
 const accountOperations: AccountOperations[] = [{
   account: {
-    walletCustody: 1, // ECDSA_VALIDATOR
+    walletCustody: 1, // ECDSA_VALIDATOR (1)
     salt: "user@example.com",
-    publicKeys: [] // Empty for ECDSA
+    publicKeys: [] // Vazio para ECDSA
   },
-  operations: [], // No operations needed for prediction
+  operations: [], // Nenhuma operação necessária para previsão
   settings: {}
 }];
 
-// Get predicted address
+// Obter endereço previsto
 const predictedAddress = smartWallet.predictWalletAddress("user@example.com");
-console.log('Predicted wallet address:', predictedAddress);
+console.log('Endereço da carteira previsto:', predictedAddress);
 ```
 
 </Tab>
@@ -178,7 +176,7 @@ curl -X POST "https://api.msa.omnes.tech/predict" \
   }'
 ```
 
-**Expected Response:**
+**Resposta Esperada:**
 ```json
 {
   "predictions": [{
@@ -191,17 +189,6 @@ curl -X POST "https://api.msa.omnes.tech/predict" \
 
 </Tab>
 </Tabs>
-
-**Expected Response:**
-```json
-{
-  "predictions": [{
-    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
-    "salt": "user@example.com",
-    "walletCustody": 1
-  }]
-}
-```
 
 ## Passo 3: Financiar a Carteira (Opcional)
 
@@ -229,7 +216,7 @@ Implante a carteira. Isso requer credenciais de assinatura (chave privada para t
 ```typescript
 import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
 
-// Initialize SmartWallet (from Step 1)
+// Inicializar SmartWallet (do Passo 1)
 const signer = await PKSigner.create(privateKey as `0x${string}`);
 const smartWallet = await SmartWallet.create(
   signer.signMessage,
@@ -238,30 +225,30 @@ const smartWallet = await SmartWallet.create(
   rpcURL,
   apiKey,
   null,
-  false // Use remote bundler (requires API key)
+  false // Usar bundler remoto (requer chave da API)
 );
 
-// Create wallet operation
+// Criar operação de carteira
 const accountOperations: AccountOperations[] = [{
   account: {
-    walletCustody: 1, // ECDSA_VALIDATOR
+    walletCustody: 1, // ECDSA_VALIDATOR (1)
     salt: "user@example.com",
     publicKeys: []
   },
-  operations: [], // Empty operations array = just create wallet
+  operations: [], // Array de operações vazio = apenas criar carteira
   settings: {}
 }];
 
-// Create wallet using remote bundler
+// Criar carteira usando bundler remoto
 const result = await smartWallet.buildAndRequestSendUserOperations(
   accountOperations,
   [], // useABI
-  []  // additional signers
+  []  // signatários adicionais
 );
 
-console.log('Wallet created!');
-console.log('Transaction hash:', result.txHash);
-console.log('Status:', result.status === 1 ? 'Success' : 'Failed');
+console.log('Carteira criada!');
+console.log('Hash da transação:', result.txHash);
+console.log('Status:', result.status === 1 ? 'Sucesso' : 'Falhou');
 ```
 
 </Tab>
@@ -291,12 +278,12 @@ curl -X POST "https://api.msa.omnes.tech/create" \
   }'
 ```
 
-**Note**: For REST API, you can also use private key signing by providing the private key in the signer configuration, but this is **not recommended for production**.
+**Nota**: Para REST API, você também pode usar assinatura com chave privada fornecendo a chave privada na configuração do signatário, mas isso **não é recomendado para produção**.
 
 </Tab>
 </Tabs>
 
-**Expected Response:**
+**Resposta Esperada:**
 ```json
 {
   "status": 1,
@@ -322,7 +309,7 @@ Verifique se a carteira foi criada com sucesso:
 ```typescript
 import { SmartWallet, PKSigner } from '@omnes/smartwallet-ts-sdk';
 
-// Initialize SmartWallet (from Step 1)
+// Inicializar SmartWallet (do Passo 1)
 const signer = await PKSigner.create(privateKey as `0x${string}`);
 const smartWallet = await SmartWallet.create(
   signer.signMessage,
@@ -334,18 +321,18 @@ const smartWallet = await SmartWallet.create(
   false
 );
 
-// Verify wallet exists
+// Verificar se a carteira existe
 const accounts = await smartWallet.checkAccounts(
   ["user@example.com"], // Salts
-  []                    // Wallet addresses (empty for salt-based check)
+  []                    // Endereços de carteira (vazio para verificação baseada em salt)
 );
 
 const account = accounts[0];
 if (account?.exists) {
-  console.log('✅ Wallet exists!');
-  console.log('Wallet address:', account.wallet);
+  console.log('✅ Carteira existe!');
+  console.log('Endereço da carteira:', account.wallet);
 } else {
-  console.log('❌ Wallet does not exist yet');
+  console.log('❌ Carteira ainda não existe');
 }
 ```
 
@@ -371,7 +358,7 @@ curl -X POST "https://api.msa.omnes.tech/check" \
   }'
 ```
 
-**Expected Response:**
+**Resposta Esperada:**
 ```json
 {
   "results": [{
@@ -396,7 +383,7 @@ Execute uma transação simples da carteira. Vamos aprovar um token ERC-20:
 ```typescript
 import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
 
-// Initialize SmartWallet (from Step 1)
+// Inicializar SmartWallet (do Passo 1)
 const signer = await PKSigner.create(privateKey as `0x${string}`);
 const smartWallet = await SmartWallet.create(
   signer.signMessage,
@@ -408,18 +395,18 @@ const smartWallet = await SmartWallet.create(
   false
 );
 
-// Define the operation
+// Definir a operação
 const operation: Operation = {
-  to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Token contract address
-  value: BigInt(0), // No ETH sent
+  to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Endereço do contrato do token
+  value: BigInt(0), // Nenhum ETH enviado
   funcSignature: "approve(address,uint256)",
   params: [
-    "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff", // Spender address
-    BigInt("1000000000000000000") // Amount (1 token, 18 decimals)
+    "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff", // Endereço do spender
+    BigInt("1000000000000000000") // Quantidade (1 token, 18 decimais)
   ]
 };
 
-// Create account operations
+// Criar operações de conta
 const accountOperations: AccountOperations[] = [{
   account: {
     walletCustody: 1,
@@ -430,16 +417,16 @@ const accountOperations: AccountOperations[] = [{
   settings: {}
 }];
 
-// Execute transaction
+// Executar transação
 const result = await smartWallet.buildAndRequestSendUserOperations(
   accountOperations,
   [], // useABI
-  []  // additional signers
+  []  // signatários adicionais
 );
 
-console.log('Transaction executed!');
-console.log('Transaction hash:', result.txHash);
-console.log('Status:', result.status === 1 ? 'Success' : 'Failed');
+console.log('Transação executada!');
+console.log('Hash da transação:', result.txHash);
+console.log('Status:', result.status === 1 ? 'Sucesso' : 'Falhou');
 ```
 
 </Tab>
@@ -479,7 +466,7 @@ curl -X POST "https://api.msa.omnes.tech/execute" \
 
 ## Exemplo Completo do Fluxo de Trabalho
 
-Here's a complete end-to-end example using the SmartWallet SDK:
+Aqui está um exemplo completo de ponta a ponta usando o SmartWallet SDK:
 
 ```typescript
 import { SmartWallet, PKSigner, AccountOperations, Operation } from '@omnes/smartwallet-ts-sdk';
@@ -488,15 +475,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 async function completeWalletWorkflow() {
-  // Load configuration
+  // Carregar configuração
   const apiKey = process.env.API_KEY!;
   const rpcURL = process.env.RPC_URL!;
   const privateKey = process.env.PRIVATE_KEY!;
   const userSalt = `user-${Date.now()}@example.com`;
 
   try {
-    // Step 1: Initialize SmartWallet
-    console.log('🔧 Initializing SmartWallet...');
+    // Passo 1: Inicializar SmartWallet
+    console.log('🔧 Inicializando SmartWallet...');
     const signer = await PKSigner.create(privateKey as `0x${string}`);
     const smartWallet = await SmartWallet.create(
       signer.signMessage,
@@ -504,18 +491,18 @@ async function completeWalletWorkflow() {
       signer.getEVMAddress(),
       rpcURL,
       apiKey,
-      null, // Contracts will be fetched from API using API key
-      false // Use remote bundler
+      null, // Contratos serão buscados da API usando a chave da API
+      false // Usar bundler remoto
     );
-    console.log('✅ SmartWallet initialized');
+    console.log('✅ SmartWallet inicializado');
 
-    // Step 2: Predict wallet address
-    console.log('🔮 Predicting wallet address...');
+    // Passo 2: Prever endereço da carteira
+    console.log('🔮 Prevendo endereço da carteira...');
     const predictedAddress = smartWallet.predictWalletAddress(userSalt);
-    console.log(`✅ Predicted address: ${predictedAddress}`);
+    console.log(`✅ Endereço previsto: ${predictedAddress}`);
 
-    // Step 3: Check if wallet exists
-    console.log('🔍 Checking wallet existence...');
+    // Passo 3: Verificar se a carteira existe
+    console.log('🔍 Verificando existência da carteira...');
     const accountOperations: AccountOperations[] = [{
       account: {
         walletCustody: 1,
@@ -526,43 +513,43 @@ async function completeWalletWorkflow() {
       settings: {}
     }];
     
-    // Check wallet existence using checkAccounts
+    // Verificar existência da carteira usando checkAccounts
     const accounts = await smartWallet.checkAccounts([userSalt], []);
     const walletExists = accounts[0]?.exists || false;
     
     if (walletExists) {
-      console.log('ℹ️ Wallet already exists');
+      console.log('ℹ️ Carteira já existe');
     } else {
-      console.log('ℹ️ Wallet does not exist, will create');
+      console.log('ℹ️ Carteira não existe, será criada');
     }
 
-    // Step 4: Create wallet (if needed)
+    // Passo 4: Criar carteira (se necessário)
     if (!walletExists) {
-      console.log('🏗️ Creating wallet...');
+      console.log('🏗️ Criando carteira...');
       const createResult = await smartWallet.buildAndRequestSendUserOperations(
         accountOperations,
         [],
         []
       );
-      console.log(`✅ Wallet created! Tx: ${createResult.txHash}`);
-      // Wait for confirmation
+      console.log(`✅ Carteira criada! Tx: ${createResult.txHash}`);
+      // Aguardar confirmação
       await new Promise(resolve => setTimeout(resolve, 5000));
     }
 
-    // Step 5: Execute a transaction
-    console.log('⚡ Executing transaction...');
+    // Passo 5: Executar uma transação
+    console.log('⚡ Executando transação...');
     const operation: Operation = {
-      to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Token address
+      to: "0x097d4Aed5924e2172451973153Fc0e03407eD1F9", // Endereço do token
       value: BigInt(0),
       funcSignature: "approve(address,uint256)",
       params: [
         "0xA65aae78EdEF916d4102BA7b5672068C0D35fbff", // Spender
-        BigInt("1000000000000000000") // Amount
+        BigInt("1000000000000000000") // Quantidade
       ]
     };
 
     const executeOperations: AccountOperations[] = [{
-      account,
+      account: accountOperations[0].account,
       operations: [operation],
       settings: {}
     }];
@@ -572,7 +559,7 @@ async function completeWalletWorkflow() {
       [],
       []
     );
-    console.log(`✅ Transaction executed! Tx: ${executeResult.txHash}`);
+    console.log(`✅ Transação executada! Tx: ${executeResult.txHash}`);
 
     return {
       walletAddress: predictedAddress,
@@ -580,71 +567,71 @@ async function completeWalletWorkflow() {
     };
 
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('❌ Erro:', error);
     throw error;
   }
 }
 
-// Run the workflow
+// Executar o fluxo de trabalho
 completeWalletWorkflow()
   .then(result => {
-    console.log('🎉 Workflow completed successfully!');
-    console.log('Result:', result);
+    console.log('🎉 Fluxo de trabalho concluído com sucesso!');
+    console.log('Resultado:', result);
   })
   .catch(error => {
-    console.error('💥 Workflow failed:', error);
+    console.error('💥 Fluxo de trabalho falhou:', error);
     process.exit(1);
   });
 ```
 
-**Environment Variables (.env):**
+**Variáveis de Ambiente (.env):**
 ```bash
-API_KEY=your-api-key-here
+API_KEY=sua-chave-api-aqui
 PRIVATE_KEY=0x1234...
 RPC_URL=https://rpc-amoy.polygon.technology/
 ```
 
 ## Problemas Comuns e Soluções
 
-### 1. Insufficient Gas
+### 1. Gas Insuficiente
 
-**Error**: Transaction fails with "insufficient funds"
+**Erro**: Transação falha com "fundos insuficientes"
 
-**Solution**: Ensure the predicted wallet address has enough native tokens:
+**Solução**: Certifique-se de que o endereço previsto da carteira tenha tokens nativos suficientes:
 
 ```typescript
-// Check balance before creating
+// Verificar saldo antes de criar
 const balance = await provider.getBalance(walletAddress);
-console.log('Wallet balance:', ethers.utils.formatEther(balance));
+console.log('Saldo da carteira:', ethers.utils.formatEther(balance));
 ```
 
-### 2. Invalid API Key
+### 2. Chave da API Inválida
 
-**Error**: "Invalid API key" or "Unauthorized"
+**Erro**: "Chave da API inválida" ou "Não autorizado"
 
-**Solution**: 
-- Verify your API key is correct: `echo $API_KEY`
-- Ensure the API key is included in the `X-API-Key` header for REST API requests
-- Verify your API key is passed to `SmartWallet.create()` when using the SDK
+**Solução**: 
+- Verifique se sua chave da API está correta: `echo $API_KEY`
+- Certifique-se de que a chave da API está incluída no cabeçalho `X-API-Key` para requisições REST API
+- Verifique se sua chave da API é passada para `SmartWallet.create()` ao usar o SDK
 - Solicite uma nova chave da API se necessário: [Entre em Contato](https://calendly.com/omnes-blockchain/30min)
 
-### 3. Invalid Client ID or Signing Credentials
+### 3. ID do Cliente Inválido ou Credenciais de Assinatura Inválidas
 
-**Error**: "Invalid client ID" or authentication failure
+**Erro**: "ID do cliente inválido" ou falha de autenticação
 
-**Solution**: Verify your Fireblocks credentials:
+**Solução**: Verifique suas credenciais do Fireblocks:
 
 ```bash
-# Check environment variables
+# Verificar variáveis de ambiente
 echo $FIREBLOCKS_CLIENT_ID
 echo $FIREBLOCKS_VERSION_ID
 ```
 
-### 4. Network Connection Issues
+### 4. Problemas de Conexão de Rede
 
-**Error**: "Network connection failed"
+**Erro**: "Falha na conexão de rede"
 
-**Solution**: Verify RPC endpoint and network status:
+**Solução**: Verifique o endpoint RPC e o status da rede:
 
 ```bash
 # Testar endpoint RPC
@@ -664,8 +651,8 @@ Agora que você criou sua primeira carteira, explore recursos mais avançados:
 
 ---
 
-<div className="mt-8 p-4 bg-green-50 rounded-lg">
-  <div className="text-green-800">
-    <strong>🎯 Congratulations!</strong> You've successfully created and used your first Account Abstraction wallet. The wallet address is deterministic based on your salt, so you can always recreate the same address.
+<div className="mt-8 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <div className="text-green-800 dark:text-green-200">
+    <strong>🎯 Parabéns!</strong> Você criou e usou com sucesso sua primeira carteira Account Abstraction. O endereço da carteira é determinístico baseado no seu salt, então você sempre pode recriar o mesmo endereço.
   </div>
 </div> 
