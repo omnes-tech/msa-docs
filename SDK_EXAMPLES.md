@@ -6,7 +6,7 @@ Here you can find some examples and code snippets on how to work with our SmartW
 
 This SDK is quite flexible and accepts several different settings:
 
-1. Set up different message sign methods, such as: private key, HSM (GCP/AWS), multisig, and passkey.
+1. Set up different message sign methods, such as: private key, HSM (GCP), multisig, and passkey.
 2. Let the SDK sign the userOp hash or implement custom code/signer to sign it;
 3. Use remote or self bundler;
 
@@ -16,7 +16,6 @@ The message sign method signs the messages used when creating a new account and 
 
 - Private key (`PKSigner`) ✅
 - GCP HSM (`GCPSigner`) ✅
-- AWS HSM ❌
 - Multisig (`MultisigSigner`) ✅ 
 - Passkey (`PasskeySigner`) ⚠️ (a detailed example will be given later)
 
@@ -100,7 +99,7 @@ const privateKey = process.env.PRIVATE_KEY;
 const rpcURL = process.env.RPC_URL as string;
 const apiKey = process.env.API_KEY as string;
 
-// Create a signer (private key, GCP/AWS HSM, etc.)
+// Create a signer (private key, GCP HSM, etc.)
 const signer = await PKSigner.create(privateKey as `0x${string}`);
 
 // build a user operation

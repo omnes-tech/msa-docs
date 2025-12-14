@@ -24,7 +24,7 @@ const privateKey = process.env.PRIVATE_KEY;
 const rpcURL = process.env.RPC_URL as string;
 const apiKey = process.env.API_KEY as string;
 
-// Create a signer (private key, GCP/AWS HSM, etc.)
+// Create a signer (private key, GCP HSM, etc.)
 const signer = await PKSigner.create(privateKey as `0x${string}`);
 
 // Create SmartWallet instance

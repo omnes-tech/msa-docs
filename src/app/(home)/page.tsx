@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 
 const translations = {
   en: {
-    title: 'MSA API Documentation',
+    title: 'MSA Documentation',
     description: 'Create and manage Account Abstraction wallets with multi-signature validation, passkey authentication, and HSM/MPC signing.',
     quickStart: 'Quick Start',
     quickStartDesc: 'Create your first wallet in 5 minutes',
@@ -23,7 +23,7 @@ const translations = {
     makingAA: 'Making Account Abstraction accessible to developers worldwide',
   },
   pt: {
-    title: 'Documentação da API MSA',
+    title: 'Documentação MSA',
     description: 'Crie e gerencie carteiras Account Abstraction com validação multi-assinatura, autenticação passkey e assinatura HSM/MPC.',
     quickStart: 'Início Rápido',
     quickStartDesc: 'Crie sua primeira carteira em 5 minutos',
@@ -85,7 +85,7 @@ export default function HomePage() {
           className="mx-auto mb-6"
           priority
         />
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent animate-gradient">
+        <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 bg-clip-text text-transparent animate-gradient">
           {t.title}
         </h1>
         <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-12 leading-relaxed">
@@ -137,7 +137,7 @@ export default function HomePage() {
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-12">
         <Link
           href={`${docsPrefix}/getting-started/quick-start`}
-          className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base"
+          className="px-8 py-3.5 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg hover:from-slate-700 hover:to-slate-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base"
         >
           {t.exploreDocs}
         </Link>
@@ -145,7 +145,7 @@ export default function HomePage() {
           href="https://calendly.com/omnes-blockchain/30min?month=2025-11"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-8 py-3.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base"
+          className="px-8 py-3.5 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg hover:from-slate-700 hover:to-slate-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base"
         >
           {t.contactUs}
         </a>

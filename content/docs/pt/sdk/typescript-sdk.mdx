@@ -23,7 +23,7 @@ npm install @omnes/smartwallet-ts-sdk
 
 Este SDK é bastante flexível e aceita várias configurações diferentes:
 
-1. Configure diferentes métodos de assinatura de mensagens, como: chave privada, HSM (GCP/AWS), multisig e passkey.
+1. Configure diferentes métodos de assinatura de mensagens, como: chave privada, HSM (GCP), multisig e passkey.
 2. Deixe o SDK assinar o hash do userOp ou implemente código/personalizado para assiná-lo;
 3. Use bundler remoto ou próprio;
 
@@ -33,7 +33,6 @@ O método de assinatura de mensagens assina as mensagens usadas ao criar uma nov
 
 - Chave privada (`PKSigner`) ✅
 - GCP HSM (`GCPSigner`) ✅
-- AWS HSM ❌
 - Multisig (`MultisigSigner`) ✅
 - Passkey (`PasskeySigner`) ⚠️ (um exemplo detalhado será dado posteriormente)
 
@@ -117,7 +116,7 @@ const privateKey = process.env.PRIVATE_KEY;
 const rpcURL = process.env.RPC_URL as string;
 const apiKey = process.env.API_KEY as string;
 
-// Criar um signatário (chave privada, GCP/AWS HSM, etc.)
+// Criar um signatário (chave privada, GCP HSM, etc.)
 const signer = await PKSigner.create(privateKey as `0x${string}`);
 
 // construir uma operação do usuário
