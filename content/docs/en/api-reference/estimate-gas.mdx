@@ -1,0 +1,74 @@
+---
+title: Estimate Gas
+description: Estimate gas costs for operations before execution.
+---
+
+Estimate gas costs for operations before execution.
+
+## Endpoint
+
+```
+POST /estimateGas
+```
+
+## Description
+
+Estimates the gas costs for operations before actually executing them. This endpoint returns the encoded UserOperation and gas estimates that can be used with the execute encoded endpoint.
+
+## Request Body
+
+Same as [Execute Operation](/docs/en/api-reference/execute-operation) endpoint.
+
+## Response
+
+```json
+{
+  "status": 1,
+  "gas": 21000,
+  "userOps": [
+    {
+      "encodedUserOp": "0x...",
+      "userOpHash": "0x..."
+    }
+  ],
+  "error": null
+}
+```
+
+### Response Fields
+
+- **`status`** (integer): The status code (0 - failed, 1 - success)
+- **`gas`** (integer): The estimated gas amount
+- **`userOps`** (array): Array of encoded UserOperations
+- **`error`** (string, nullable): Error message if estimation failed
+
+## Example Request
+
+See [Execute Operation](/docs/en/api-reference/execute-operation) for request examples.
+
+## Use Cases
+
+- **Gas optimization**: Estimate gas before execution to optimize costs
+- **User experience**: Show users estimated gas costs before confirming transactions
+- **Batch operations**: Estimate gas for multiple operations
+- **Pre-execution validation**: Verify operations will succeed before execution
+
+## Best Practices
+
+1. **Always estimate first**: Estimate gas before execution for better user experience
+2. **Handle estimation failures**: Check for errors in the response
+3. **Use encoded operations**: Use the encoded UserOperations from this endpoint with execute encoded
+4. **Monitor gas trends**: Track gas estimates over time for optimization
+
+## Related Endpoints
+
+- **[Execute Operation](/docs/en/api-reference/execute-operation)** - Execute operations directly
+- **[Execute Encoded](/docs/en/api-reference/execute-encoded)** - Execute using encoded UserOperations from this endpoint
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> Use this endpoint to get encoded UserOperations that can be executed later. This is useful for separating gas estimation from execution.
+  </div>
+</div>

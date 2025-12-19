@@ -1,0 +1,252 @@
+---
+title: Criar Carteira
+description: Implantar novas carteiras Account Abstraction na blockchain.
+---
+
+Implantar novas carteiras Account Abstraction na blockchain.
+
+## Endpoint
+
+```
+POST /create
+```
+
+## Descrição
+
+Cria e implanta novas carteiras Account Abstraction na blockchain com base no salt e tipo de custódia especificados. A carteira será implantada como um smart contract na rede especificada.
+
+## Corpo da Solicitação
+
+```json
+{
+  "accounts": [
+    {
+      "salt": "example@gmail.com",
+      "walletCustody": 2,
+      "passkeyPubKey": ["base64-encoded-key"]
+    }
+  ],
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+    "signer": {
+      "clientId": "your-fireblocks-client-id",
+      "versionId": "1"
+    },
+    "factory": "0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A",
+    "beaconAdminAddress": "0x189BCA30F33FEbe6f9E3722909455B7666bC7DEA",
+    "beaconAdminCreationCode": "0x60a0604052..."
+  }
+}
+```
+
+### Parâmetros da Solicitação
+
+#### `accounts` (array, obrigatório)
+
+Array de contas a criar.
+
+- **`salt`** (string, opcional): O salt para prever/criar o endereço da carteira. Obrigatório se `wallet` estiver vazio.
+- **`wallet`** (string, opcional): O endereço da carteira. Obrigatório se `salt` estiver vazio.
+- **`walletCustody`** (integer, obrigatório): A classificação de custódia da carteira (0-5)
+- **`passkeyPubKey`** (array, opcional): A chave pública passkey em formato base64. Obrigatório se a custódia da carteira for 2, 4 ou 5.
+- **`signers`** (array, opcional): Os signatários do validador. Obrigatório se o tipo de validador for 3 ou 4.
+- **`threshold`** (string, opcional): O threshold do validador. Obrigatório se o tipo de validador for 3 ou 4.
+- **`legacyWallet`** (boolean, opcional): Flag de carteira legada. Apenas necessário se a carteira foi criada antes da atualização MSA.
+
+#### `settings` (object, obrigatório)
+
+Configurações para criação da carteira.
+
+- **`rpc`** (string, obrigatório): O endpoint RPC para a chain
+- **`entryPoint`** (string, obrigatório): O endereço do entry point na chain fornecida
+- **`signer`** (object, obrigatório): Configuração do signatário (HSM ou MPC)
+- **`factory`** (string, opcional): O endereço da factory na chain fornecida
+- **`beaconAdminAddress`** (string, opcional): O endereço do beacon admin na chain fornecida
+- **`beaconAdminCreationCode`** (string, opcional): O código de criação do beacon admin, apenas necessário para criação de contas
+- **`paymaster`** (string, opcional): O endereço do paymaster na chain fornecida
+- **`aggregator`** (string, opcional): O endereço do agregador na chain fornecida
+- **`validator`** (string, opcional): O endereço do validador na chain fornecida
+
+## Resposta
+
+```json
+{
+  "status": 1,
+  "txHash": "0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938",
+  "cumulativeGasUsed": 17033026,
+  "gasUsed": 34111,
+  "effectiveGasPrice": "1136849215",
+  "returnData": [
+    {
+      "0": {
+        "salt": "example@gmail.com",
+        "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+      }
+    }
+  ],
+  "logs": []
+}
+```
+
+### Campos da Resposta
+
+- **`status`** (integer): O código de status da transação (0 - falhou, 1 - sucesso, 2 - conta já criada, 3 - contas parcialmente criadas)
+- **`txHash`** (string): O hash da transação
+- **`cumulativeGasUsed`** (integer): O gas cumulativo usado pela transação
+- **`gasUsed`** (integer): O gas usado pela transação
+- **`effectiveGasPrice`** (string): O preço efetivo do gas da transação
+- **`returnData`** (array): Os dados de retorno da transação
+- **`logs`** (array): Os logs da transação
+
+## Exemplo de Solicitação
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [
+      {
+        "salt": "user@example.com",
+        "walletCustody": 2,
+        "passkeyPubKey": ["base64-encoded-key"]
+      }
+    ],
+    "settings": {
+      "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "signer": {
+        "clientId": "your-fireblocks-client-id",
+        "versionId": "1"
+      },
+      "factory": "0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A"
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/create', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    accounts: [
+      {
+        salt: 'user@example.com',
+        walletCustody: 2,
+        passkeyPubKey: ['base64-encoded-key'],
+      },
+    ],
+    settings: {
+      rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      signer: {
+        clientId: 'your-fireblocks-client-id',
+        versionId: '1',
+      },
+      factory: '0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A',
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Carteira criada:', result.txHash);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/create"
+payload = {
+    "accounts": [
+        {
+            "salt": "user@example.com",
+            "walletCustody": 2,
+            "passkeyPubKey": ["base64-encoded-key"]
+        }
+    ],
+    "settings": {
+        "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+        "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+        "signer": {
+            "clientId": "your-fireblocks-client-id",
+            "versionId": "1"
+        },
+        "factory": "0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A"
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Carteira criada: {result['txHash']}")
+```
+
+</Tab>
+</Tabs>
+
+## Respostas de Erro
+
+### 400 Bad Request
+
+Parâmetros de solicitação inválidos.
+
+```json
+{
+  "error": "invalid wallet custody type"
+}
+```
+
+### 422 Unprocessable Entity
+
+Solicitação válida mas a execução falhou.
+
+```json
+{
+  "error": "account already exists"
+}
+```
+
+## Casos de Uso
+
+- **Onboarding de usuários**: Criar carteiras para novos usuários durante o registro
+- **Implantação em lote**: Implantar múltiplas carteiras em uma única transação
+- **Configuração multi-assinatura**: Criar carteiras com custódia compartilhada
+- **Integração passkey**: Implantar carteiras com autenticação biométrica
+
+## Melhores Práticas
+
+1. **Financiar antes de criar**: Garanta que o endereço da carteira previsto tenha tokens nativos suficientes para gas
+2. **Prever primeiro**: Sempre preveja o endereço da carteira antes de criar para verificar se corresponde às expectativas
+3. **Tratar carteiras existentes**: Verifique se a carteira existe antes de tentar criar
+4. **Monitorar custos de gas**: Acompanhe o uso de gas para otimização
+5. **Testar em testnet**: Sempre teste a criação de carteiras em testnet primeiro
+
+## Endpoints Relacionados
+
+- **[Prever Carteira](/docs/pt/api-reference/predict-wallet)** - Prever o endereço da carteira antes da criação
+- **[Verificar Carteira](/docs/pt/api-reference/check-wallet)** - Verificar existência da carteira
+- **[Executar Operação](/docs/pt/api-reference/execute-operation)** - Começar a usar sua carteira
+
+---
+
+<div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <div className="text-green-800 dark:text-green-200">
+    <strong>✅ Sucesso:</strong> Uma vez criada, sua carteira está pronta para uso. Você pode começar imediatamente a executar transações e gerenciar sua carteira Account Abstraction.
+  </div>
+</div>
+
+<div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+  <div className="text-yellow-800 dark:text-yellow-200">
+    <strong>⚠️ Importante:</strong> Certifique-se de financiar o endereço da carteira previsto antes da criação. A carteira precisa de tokens nativos para pagar os custos de gas de implantação.
+  </div>
+</div>

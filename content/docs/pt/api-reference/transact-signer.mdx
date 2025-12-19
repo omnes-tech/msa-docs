@@ -1,0 +1,65 @@
+---
+title: Transação Signatário
+description: Executar transações diretas HSM/MPC.
+---
+
+Executar transações diretas HSM/MPC.
+
+## Endpoint
+
+```
+POST /transactSigner
+```
+
+## Descrição
+
+Executa transações diretamente com signatários HSM/MPC, contornando Account Abstraction. Isso é útil para transações diretas na blockchain.
+
+## Corpo da Solicitação
+
+```json
+{
+  "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+  "funcSignature": "transfer(address,uint256)",
+  "funcParams": ["0x106eB473f541E9485bB428aeC502c2FEa1467779", "1000000000000000000"],
+  "value": "0",
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "signer": {
+      "clientId": "your-fireblocks-client-id",
+      "versionId": "1"
+    }
+  }
+}
+```
+
+## Resposta
+
+Mesmo que o endpoint [Executar Operação](/docs/pt/api-reference/execute-operation).
+
+## Casos de Uso
+
+- **Transações diretas**: Executar transações sem Account Abstraction
+- **Compatibilidade legada**: Interagir com contratos que não suportam Account Abstraction
+- **Operações HSM/MPC**: Usar infraestrutura de assinatura empresarial para transações diretas
+- **Otimização de gas**: Contornar sobrecarga de Account Abstraction quando não necessário
+
+## Melhores Práticas
+
+1. **Usar quando apropriado**: Use apenas para transações diretas, prefira Account Abstraction quando possível
+2. **Tratar gas adequadamente**: Configure configurações de overshoot de gas apropriadamente
+3. **Validar endereços**: Garanta que os endereços dos contratos estão corretos
+4. **Monitorar execução**: Acompanhe o status da transação e trate falhas
+
+## Endpoints Relacionados
+
+- **[Executar Operação](/docs/pt/api-reference/execute-operation)** - Executar operações Account Abstraction
+- **[Assinar Mensagem](/docs/pt/api-reference/sign-message)** - Assinar mensagens com HSM/MPC
+
+---
+
+<div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+  <div className="text-yellow-800 dark:text-yellow-200">
+    <strong>⚠️ Nota:</strong> Este endpoint contorna Account Abstraction. Use endpoints Account Abstraction quando possível para melhor UX e recursos como transações sem gas.
+  </div>
+</div>

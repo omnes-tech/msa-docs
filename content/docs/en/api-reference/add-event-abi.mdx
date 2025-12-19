@@ -1,0 +1,211 @@
+---
+title: Add Event ABI
+description: Add custom event ABIs to the system.
+---
+
+Add custom event ABIs to the system.
+
+## Endpoint
+
+```
+POST /addEvent
+```
+
+## Description
+
+Adds custom event ABIs to the system for use in event filtering and decoding.
+
+## Request Body
+
+```json
+{
+  "eventABI": {
+    "type": "event",
+    "name": "Transfer",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  }
+}
+```
+
+## Response
+
+```json
+{
+  "status": 200,
+  "eventDef": "event Transfer(address indexed from, address indexed to, uint256 value)"
+}
+```
+
+### Response Fields
+
+- **`status`** (integer): HTTP status code (200 for success)
+- **`eventDef`** (string): The canonical event definition string
+
+## Example Request
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/addEvent \
+  -H "Content-Type: application/json" \
+  -d '{
+    "eventABI": {
+      "type": "event",
+      "name": "Transfer",
+      "inputs": [
+        {
+          "name": "from",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "to",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "value",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/addEvent', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    eventABI: {
+      type: 'event',
+      name: 'Transfer',
+      inputs: [
+        {
+          name: 'from',
+          type: 'address',
+          indexed: true,
+          internalType: 'address',
+        },
+        {
+          name: 'to',
+          type: 'address',
+          indexed: true,
+          internalType: 'address',
+        },
+        {
+          name: 'value',
+          type: 'uint256',
+          indexed: false,
+          internalType: 'uint256',
+        },
+      ],
+      anonymous: false,
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Event registered:', result.eventDef);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/addEvent"
+payload = {
+    "eventABI": {
+        "type": "event",
+        "name": "Transfer",
+        "inputs": [
+            {
+                "name": "from",
+                "type": "address",
+                "indexed": True,
+                "internalType": "address"
+            },
+            {
+                "name": "to",
+                "type": "address",
+                "indexed": True,
+                "internalType": "address"
+            },
+            {
+                "name": "value",
+                "type": "uint256",
+                "indexed": False,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": False
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Event registered: {result['eventDef']}")
+```
+
+</Tab>
+</Tabs>
+
+## Use Cases
+
+- **Custom events**: Register events from custom smart contracts
+- **Event filtering**: Enable filtering of events not pre-registered
+- **Decoding**: Enable proper decoding of custom contract events
+- **Integration**: Support integration with any EVM-compatible contract
+
+## Best Practices
+
+1. **Register before filtering**: Add event ABIs before filtering events
+2. **Use correct format**: Ensure ABI format matches Solidity event definition
+3. **Handle duplicates**: Check if event already exists before adding
+4. **Validate ABI**: Ensure event ABI is valid before registration
+
+## Related Endpoints
+
+- **[Filter Events](/docs/en/api-reference/filter-events)** - Filter events using registered ABIs
+- **[Get Receipt](/docs/en/api-reference/get-receipt)** - Get receipts with decoded event logs
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> Register custom event ABIs to filter and decode events from any contract. This enables integration with contracts not pre-registered in the system.
+  </div>
+</div>

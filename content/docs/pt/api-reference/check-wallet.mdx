@@ -1,0 +1,195 @@
+---
+title: Verificar Carteira
+description: Verificar existência e status da carteira na blockchain.
+---
+
+Verificar existência e status da carteira na blockchain.
+
+## Endpoint
+
+```
+POST /check
+```
+
+## Descrição
+
+Verifica se uma carteira existe na blockchain com base no salt ou endereço da carteira fornecido. Isso é útil para verificar o status de implantação da carteira antes de tentar operações.
+
+## Corpo da Solicitação
+
+```json
+{
+  "accounts": [
+    {
+      "salt": "example@gmail.com",
+      "walletCustody": 2
+    }
+  ],
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+    "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+    "beaconAdminCreationCode": "0x60a0604052..."
+  }
+}
+```
+
+### Parâmetros da Solicitação
+
+#### `accounts` (array, obrigatório)
+
+Array de solicitações de verificação de conta.
+
+- **`salt`** (string, opcional): O salt para verificar o endereço da carteira. Obrigatório se `wallet` estiver vazio.
+- **`wallet`** (string, opcional): O endereço da carteira para verificar. Obrigatório se `salt` estiver vazio.
+- **`walletCustody`** (integer, opcional): A classificação de custódia da carteira (1-5). Apenas necessário se o endereço da carteira estiver vazio.
+
+#### `settings` (object, obrigatório)
+
+Configurações para a verificação.
+
+- **`rpc`** (string, obrigatório): O endpoint RPC para a chain
+- **`factory`** (string, opcional): O endereço da factory da chain fornecida
+- **`beaconAdminAddress`** (string, opcional): O endereço do beacon admin da chain fornecida
+- **`beaconAdminCreationCode`** (string, opcional): O código de criação do beacon da chain fornecida
+
+## Resposta
+
+```json
+[
+  {
+    "exists": true,
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "salt": "example@gmail.com",
+    "error": null
+  }
+]
+```
+
+### Campos da Resposta
+
+- **`exists`** (boolean): Se a conta existe na blockchain
+- **`wallet`** (string): O endereço da carteira verificado
+- **`salt`** (string): O salt usado para a verificação
+- **`error`** (string, nullable): Mensagem de erro se a verificação falhou
+
+## Exemplo de Solicitação
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/check \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [
+      {
+        "salt": "user@example.com",
+        "walletCustody": 2
+      }
+    ],
+    "settings": {
+      "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+      "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+      "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+      "beaconAdminCreationCode": "0x60a0604052..."
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/check', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    accounts: [
+      {
+        salt: 'user@example.com',
+        walletCustody: 2,
+      },
+    ],
+    settings: {
+      rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+      factory: '0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE',
+      beaconAdminAddress: '0x183A1019242865C39f06C78716933259A161E99A',
+      beaconAdminCreationCode: '0x60a0604052...',
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Carteira existe:', result[0].exists);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/check"
+payload = {
+    "accounts": [
+        {
+            "salt": "user@example.com",
+            "walletCustody": 2
+        }
+    ],
+    "settings": {
+        "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+        "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+        "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+        "beaconAdminCreationCode": "0x60a0604052..."
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Carteira existe: {result[0]['exists']}")
+```
+
+</Tab>
+</Tabs>
+
+## Respostas de Erro
+
+### 400 Bad Request
+
+Parâmetros de solicitação inválidos.
+
+```json
+{
+  "error": "invalid rpc"
+}
+```
+
+## Casos de Uso
+
+- **Verificação pré-criação**: Verificar se uma carteira já existe antes de tentar criar
+- **Monitoramento de status**: Verificar status de implantação da carteira
+- **Verificação em lote**: Verificar múltiplos endereços de carteira de uma vez
+- **Validação de endereço**: Confirmar que os endereços da carteira estão implantados
+
+## Melhores Práticas
+
+1. **Verificar antes de criar**: Sempre verifique se a carteira não existe antes da criação
+2. **Tratar erros**: Verifique erros no array de resposta
+3. **Usar parâmetros consistentes**: Use o mesmo salt e tipo de custódia usados para previsão/criação
+
+## Endpoints Relacionados
+
+- **[Prever Carteira](/docs/pt/api-reference/predict-wallet)** - Prever endereço da carteira
+- **[Criar Carteira](/docs/pt/api-reference/create-wallet)** - Implantar novas carteiras
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> Use este endpoint para verificar a existência da carteira antes de tentar operações. Isso ajuda a prevenir erros e fornece melhor experiência do usuário.
+  </div>
+</div>

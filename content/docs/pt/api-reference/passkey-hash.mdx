@@ -1,0 +1,71 @@
+---
+title: Hash Passkey
+description: Gerar hashes passkey para operações baseadas em passkey.
+---
+
+Gerar hashes passkey para operações baseadas em passkey.
+
+## Endpoint
+
+```
+POST /passkeyHash
+```
+
+## Descrição
+
+Gera hashes passkey que precisam ser assinados por passkeys. O hash assinado pode então ser usado com o endpoint execute passkey.
+
+## Corpo da Solicitação
+
+Mesmo que o endpoint [Executar Operação](/docs/pt/api-reference/execute-operation).
+
+## Resposta
+
+```json
+{
+  "status": 0,
+  "results": [
+    {
+      "userOpHash": "0x...",
+      "encodedUserOp": "0x...",
+      "aggrIndexes": [0, 1],
+      "error": null
+    }
+  ]
+}
+```
+
+### Campos da Resposta
+
+- **`status`** (integer): O código de status (0 - sucesso)
+- **`results`** (array): Array de resultados de hash passkey
+  - **`userOpHash`** (string): O hash da UserOperation para assinar
+  - **`encodedUserOp`** (string): A UserOperation codificada
+  - **`aggrIndexes`** (array): Índices do agregador para agregação de assinatura
+  - **`error`** (string, nullable): Mensagem de erro se a geração do hash falhou
+
+## Casos de Uso
+
+- **Integração passkey**: Gerar hashes para assinatura de transações baseadas em passkey
+- **Autenticação biométrica**: Habilitar assinatura de transações sem senha
+- **Carteiras móveis**: Suportar autenticação biométrica nativa do dispositivo
+- **Segurança aprimorada**: Combinar validação passkey com Account Abstraction
+
+## Melhores Práticas
+
+1. **Assinar com passkey**: Use o userOpHash para assinar com o passkey do usuário
+2. **Tratar agregação**: Use aggrIndexes para agregação de assinatura se necessário
+3. **Validar antes da execução**: Garanta que a assinatura passkey seja válida antes de execute passkey
+4. **Tratamento de erros**: Verifique erros no array de resultados
+
+## Endpoints Relacionados
+
+- **[Executar Passkey](/docs/pt/api-reference/execute-passkey)** - Executar operações com assinaturas passkey
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> O userOpHash retornado por este endpoint precisa ser assinado pelo passkey do usuário. Use APIs WebAuthn para obter a assinatura passkey.
+  </div>
+</div>

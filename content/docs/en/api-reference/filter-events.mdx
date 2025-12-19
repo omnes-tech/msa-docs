@@ -1,0 +1,153 @@
+---
+title: Filter Events
+description: Filter blockchain events based on specified criteria.
+---
+
+Filter blockchain events based on specified criteria.
+
+## Endpoint
+
+```
+POST /filterEvent
+```
+
+## Description
+
+Filters blockchain events based on specified criteria including event name, contract addresses, block ranges, and field values.
+
+## Request Body
+
+```json
+{
+  "contracts": ["0x96AF30413A6999f9948c7c88b0dFf8B56Bf31EF6"],
+  "eventName": "Transfer",
+  "eventDef": "event Transfer(address indexed from, address indexed to, uint256 value)",
+  "fields": {
+    "from": "0x0000000000000000000000000000000000000000",
+    "to": ["0x106eB473f541E9485bB428aeC502c2FEa1467779"]
+  },
+  "fromBlock": "0x0",
+  "toBlock": "latest",
+  "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+```
+
+## Response
+
+```json
+{
+  "requestStatus": 200,
+  "txHashes": [
+    "0x81eb1ce8c61a966a1a9ca84bf3701f934977d36e76f5b255c43478a3d59936e0"
+  ]
+}
+```
+
+### Response Fields
+
+- **`requestStatus`** (integer): HTTP status code of the request
+- **`txHashes`** (array): Array of transaction hashes containing the filtered events
+
+## Example Request
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/filterEvent \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contracts": ["0x96AF30413A6999f9948c7c88b0dFf8B56Bf31EF6"],
+    "eventName": "Transfer",
+    "eventDef": "event Transfer(address indexed from, address indexed to, uint256 value)",
+    "fields": {
+      "from": "0x0000000000000000000000000000000000000000",
+      "to": ["0x106eB473f541E9485bB428aeC502c2FEa1467779"]
+    },
+    "fromBlock": "0x0",
+    "toBlock": "latest",
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/filterEvent', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    contracts: ['0x96AF30413A6999f9948c7c88b0dFf8B56Bf31EF6'],
+    eventName: 'Transfer',
+    eventDef: 'event Transfer(address indexed from, address indexed to, uint256 value)',
+    fields: {
+      from: '0x0000000000000000000000000000000000000000',
+      to: ['0x106eB473f541E9485bB428aeC502c2FEa1467779'],
+    },
+    fromBlock: '0x0',
+    toBlock: 'latest',
+    rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+  }),
+});
+
+const result = await response.json();
+console.log('Found transactions:', result.txHashes.length);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/filterEvent"
+payload = {
+    "contracts": ["0x96AF30413A6999f9948c7c88b0dFf8B56Bf31EF6"],
+    "eventName": "Transfer",
+    "eventDef": "event Transfer(address indexed from, address indexed to, uint256 value)",
+    "fields": {
+        "from": "0x0000000000000000000000000000000000000000",
+        "to": ["0x106eB473f541E9485bB428aeC502c2FEa1467779"]
+    },
+    "fromBlock": "0x0",
+    "toBlock": "latest",
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Found transactions: {len(result['txHashes'])}")
+```
+
+</Tab>
+</Tabs>
+
+## Use Cases
+
+- **Event monitoring**: Track specific contract events
+- **Transaction discovery**: Find transactions containing specific events
+- **Analytics**: Analyze event patterns across contracts
+- **Notification systems**: Trigger actions based on events
+
+## Best Practices
+
+1. **Use indexed fields**: Filter on indexed event fields for better performance
+2. **Limit block ranges**: Use specific block ranges instead of scanning entire chain
+3. **Add event ABIs**: Use add event ABI endpoint to register custom events
+4. **Handle large result sets**: Paginate results for large event sets
+
+## Related Endpoints
+
+- **[Add Event ABI](/docs/en/api-reference/add-event-abi)** - Register custom event ABIs
+- **[Get Receipt](/docs/en/api-reference/get-receipt)** - Get full transaction details with decoded logs
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> Register custom event ABIs using the add event ABI endpoint to filter events from any contract, even if not pre-registered.
+  </div>
+</div>

@@ -1,0 +1,135 @@
+---
+title: Visão Geral da API
+description: Referência completa da API para os endpoints da API MSA (Modular Smart Account).
+---
+
+APIs flexíveis para gerenciamento de carteiras Account Abstraction, execução de transações e interações com blockchain.
+
+## Referência de Endpoints
+
+| API | Método | Descrição |
+|-----|--------|-----------|
+| [Prever Carteira](/docs/pt/api-reference/predict-wallet) | POST | Prever endereços de carteira antes da criação com base em salt e tipo de custódia. |
+| [Criar Carteira](/docs/pt/api-reference/create-wallet) | POST | Implantar novas carteiras Account Abstraction na blockchain. |
+| [Verificar Carteira](/docs/pt/api-reference/check-wallet) | POST | Verificar existência e status da carteira na blockchain. |
+| [Executar Operação](/docs/pt/api-reference/execute-operation) | POST | Executar operações com parâmetros legíveis. |
+| [Executar Codificado](/docs/pt/api-reference/execute-encoded) | POST | Executar UserOperations pré-codificadas. |
+| [Executar Passkey](/docs/pt/api-reference/execute-passkey) | POST | Executar operações com validação passkey. |
+| [Estimar Gas](/docs/pt/api-reference/estimate-gas) | POST | Estimar custos de gas para operações antes da execução. |
+| [Ler Contrato](/docs/pt/api-reference/read-contract) | POST | Ler estado de smart contract da blockchain. |
+| [Obter Recibo](/docs/pt/api-reference/get-receipt) | POST | Obter recibos de transação por hash de transação. |
+| [Filtrar Eventos](/docs/pt/api-reference/filter-events) | POST | Filtrar eventos da blockchain com base em critérios especificados. |
+| [Assinar Mensagem](/docs/pt/api-reference/sign-message) | POST | Assinar mensagens arbitrárias com chaves HSM/MPC. |
+| [Hash Passkey](/docs/pt/api-reference/passkey-hash) | POST | Gerar hashes passkey para operações baseadas em passkey. |
+| [Transação Signatário](/docs/pt/api-reference/transact-signer) | POST | Executar transações diretas HSM/MPC. |
+| [Desbloquear Transação](/docs/pt/api-reference/unstuck-transaction) | POST | Resolver transações travadas. |
+| [Adicionar ABI de Evento](/docs/pt/api-reference/add-event-abi) | POST | Adicionar ABIs de eventos personalizados ao sistema. |
+| [Adicionar ABI de Erro](/docs/pt/api-reference/add-error-abi) | POST | Adicionar ABIs de erros personalizados ao sistema. |
+
+## Autenticação
+
+Todos os endpoints da API requerem autenticação usando credenciais HSM/MPC. A autenticação é configurada através do objeto `signer` nas configurações da solicitação.
+
+### Configuração do Signatário
+
+O objeto `signer` requer um `clientId` e um `versionId` (para HSM) ou `assetId` (para MPC):
+
+**Configuração HSM:**
+```json
+{
+  "signer": {
+    "clientId": "seu-client-id-fireblocks",
+    "versionId": "1"
+  }
+}
+```
+
+**Configuração MPC:**
+```json
+{
+  "signer": {
+    "clientId": "seu-client-id-fireblocks",
+    "assetId": "ETH"
+  }
+}
+```
+
+Entre em contato com a equipe MSA para credenciais HSM/MPC e acesso à API.
+
+## URL Base
+
+Todas as solicitações da API devem ser feitas para:
+
+```
+https://api.msa.omnes.tech
+```
+
+## Limites de Taxa
+
+A API MSA implementa limitação de taxa para garantir uso justo:
+
+| Nível | Solicitações por Minuto | Solicitações por Hora |
+|-------|--------------------------|-----------------------|
+| Gratuito | 60 | 1.000 |
+| Pro | 300 | 10.000 |
+| Empresarial | 1.000 | 50.000 |
+
+## Códigos de Erro
+
+Códigos de status HTTP comuns e seus significados:
+
+| Código | Status | Descrição |
+|--------|--------|-----------|
+| 200 | OK | Solicitação bem-sucedida |
+| 400 | Bad Request | Parâmetros de solicitação inválidos |
+| 401 | Unauthorized | Credenciais de autenticação inválidas |
+| 422 | Unprocessable Entity | Solicitação válida mas execução falhou |
+| 429 | Too Many Requests | Limite de taxa excedido |
+| 500 | Internal Server Error | Erro do lado do servidor |
+
+## Redes Suportadas
+
+| Rede | Chain ID | Endpoint RPC |
+|------|----------|--------------|
+| Polygon Amoy (Testnet) | 80002 | `https://rpc-amoy.polygon.technology/` |
+| Polygon Mainnet | 137 | `https://polygon-rpc.com/` |
+| Base Sepolia (Testnet) | 84532 | `https://sepolia.base.org/` |
+| Base Mainnet | 8453 | `https://mainnet.base.org/` |
+
+## Documentação Interativa
+
+Para uma experiência interativa completa com todos os endpoints, schemas de request/response e a capacidade de testar chamadas da API diretamente no seu navegador, visite a [Documentação Interativa da API](/docs/pt/api-reference/interactive-docs).
+
+## Links Rápidos
+
+<div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <a href="/docs/pt/api-reference/predict-wallet" className="block p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+    <h3 className="font-semibold mb-1">🔮 Prever Carteira</h3>
+    <p className="text-sm text-gray-600 dark:text-gray-400">Calcule endereços de carteira antes da implantação</p>
+  </a>
+  
+  <a href="/docs/pt/api-reference/create-wallet" className="block p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+    <h3 className="font-semibold mb-1">🏦 Criar Carteira</h3>
+    <p className="text-sm text-gray-600 dark:text-gray-400">Implante carteiras Account Abstraction</p>
+  </a>
+  
+  <a href="/docs/pt/api-reference/execute-operation" className="block p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+    <h3 className="font-semibold mb-1">⚡ Executar Operação</h3>
+    <p className="text-sm text-gray-600 dark:text-gray-400">Execute transações com parâmetros legíveis</p>
+  </a>
+  
+  <a href="/docs/pt/api-reference/interactive-docs" className="block p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+    <h3 className="font-semibold mb-1">🔧 Documentação Interativa</h3>
+    <p className="text-sm text-gray-600 dark:text-gray-400">Teste endpoints diretamente no seu navegador</p>
+  </a>
+</div>
+
+---
+
+<div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-center">
+    <div className="text-blue-900 dark:text-blue-100 mb-4 text-base leading-relaxed">
+      <strong className="text-blue-950 dark:text-blue-50">🚀 Pronto para Começar?</strong> Confira nosso <a href="/docs/pt/getting-started/quick-start" className="font-semibold underline text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200">Guia de Início Rápido</a> ou explore a <a href="/docs/pt/api-reference/interactive-docs" className="font-semibold underline text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200">Documentação Interativa da API</a>.
+    </div>
+  </div>
+</div>

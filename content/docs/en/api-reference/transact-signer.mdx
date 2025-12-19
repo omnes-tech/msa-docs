@@ -1,0 +1,65 @@
+---
+title: Transact Signer
+description: Execute direct HSM/MPC transactions.
+---
+
+Execute direct HSM/MPC transactions.
+
+## Endpoint
+
+```
+POST /transactSigner
+```
+
+## Description
+
+Executes transactions directly with HSM/MPC signers, bypassing Account Abstraction. This is useful for direct blockchain transactions.
+
+## Request Body
+
+```json
+{
+  "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+  "funcSignature": "transfer(address,uint256)",
+  "funcParams": ["0x106eB473f541E9485bB428aeC502c2FEa1467779", "1000000000000000000"],
+  "value": "0",
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "signer": {
+      "clientId": "your-fireblocks-client-id",
+      "versionId": "1"
+    }
+  }
+}
+```
+
+## Response
+
+Same as [Execute Operation](/docs/en/api-reference/execute-operation) endpoint.
+
+## Use Cases
+
+- **Direct transactions**: Execute transactions without Account Abstraction
+- **Legacy compatibility**: Interact with contracts that don't support Account Abstraction
+- **HSM/MPC operations**: Use enterprise signing infrastructure for direct transactions
+- **Gas optimization**: Bypass Account Abstraction overhead when not needed
+
+## Best Practices
+
+1. **Use when appropriate**: Only use for direct transactions, prefer Account Abstraction when possible
+2. **Handle gas properly**: Configure gas overshoot settings appropriately
+3. **Validate addresses**: Ensure contract addresses are correct
+4. **Monitor execution**: Track transaction status and handle failures
+
+## Related Endpoints
+
+- **[Execute Operation](/docs/en/api-reference/execute-operation)** - Execute Account Abstraction operations
+- **[Sign Message](/docs/en/api-reference/sign-message)** - Sign messages with HSM/MPC
+
+---
+
+<div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+  <div className="text-yellow-800 dark:text-yellow-200">
+    <strong>⚠️ Note:</strong> This endpoint bypasses Account Abstraction. Use Account Abstraction endpoints when possible for better UX and features like gasless transactions.
+  </div>
+</div>

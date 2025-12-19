@@ -40,3 +40,97 @@ pre code {
   word-break: break-all;
   overflow-wrap: break-word;
 }
+
+/* Fix sidebar collapse button spacing */
+/* Target the header container that holds the collapse button */
+aside#nd-sidebar > div:first-child {
+  padding-bottom: 0.5rem !important;
+  gap: 0.5rem !important;
+}
+
+/* Target the flex container that directly contains the collapse button */
+aside#nd-sidebar > div:first-child > div.flex {
+  gap: 0.25rem !important;
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  align-items: center !important;
+}
+
+/* Fix collapse button - remove mb-auto and reduce padding/margin */
+aside#nd-sidebar button.mb-auto,
+aside#nd-sidebar button[data-sidebar-collapse],
+aside#nd-sidebar > div:first-child > div.flex > button {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  padding: 0.375rem !important;
+  min-width: auto !important;
+  min-height: auto !important;
+}
+
+/* Ensure SVG inside button doesn't create extra space */
+aside#nd-sidebar button.mb-auto svg,
+aside#nd-sidebar button[data-sidebar-collapse] svg,
+aside#nd-sidebar > div:first-child > div.flex > button svg {
+  display: block !important;
+  margin: 0 !important;
+}
+
+/* Fix path element spacing */
+aside#nd-sidebar button.mb-auto svg path,
+aside#nd-sidebar button[data-sidebar-collapse] svg path,
+aside#nd-sidebar > div:first-child > div.flex > button svg path {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Additional generic selectors for sidebar header spacing */
+aside[data-sidebar] > div:first-child,
+aside[role="complementary"] > div:first-child {
+  padding-bottom: 0.5rem !important;
+  gap: 0.5rem !important;
+}
+
+/* Generic selector for collapse button container */
+aside[data-sidebar] > div:first-child > div.flex,
+aside[role="complementary"] > div:first-child > div.flex {
+  gap: 0.25rem !important;
+  margin: 0 !important;
+  align-items: center !important;
+}
+
+/* Generic selector for any collapse button in sidebar */
+aside button[aria-label*="sidebar" i],
+aside button[aria-label*="menu" i],
+aside button[aria-label*="toggle" i] {
+  margin: 0 !important;
+  padding: 0.375rem !important;
+}
+
+/* Ensure no extra spacing in sidebar header row */
+aside > div:first-child > div.flex {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+}
+
+/* Target the specific structure from DOM path */
+aside#nd-sidebar > div.flex.flex-col.gap-3.p-4.pb-2 {
+  padding-bottom: 0.5rem !important;
+  gap: 0.5rem !important;
+  padding-top: 1rem !important;
+}
+
+aside#nd-sidebar > div.flex.flex-col.gap-3.p-4.pb-2 > div.flex.max-md\:hidden {
+  gap: 0.25rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove mb-auto from button and reduce all spacing */
+aside#nd-sidebar button.mb-auto {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 0.375rem !important;
+}

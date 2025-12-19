@@ -1,0 +1,61 @@
+---
+title: Desbloquear Transação
+description: Resolver transações travadas.
+---
+
+Resolver transações travadas.
+
+## Endpoint
+
+```
+POST /unstuck
+```
+
+## Descrição
+
+Resolve transações travadas substituindo-as por transações com preço de gas mais alto.
+
+## Corpo da Solicitação
+
+```json
+{
+  "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+  "signer": {
+    "clientId": "your-fireblocks-client-id",
+    "versionId": "1"
+  },
+  "percentTxGasOvershoot": 50,
+  "percentTxGasPriceOvershoot": "50"
+}
+```
+
+## Resposta
+
+Mesmo que o endpoint [Executar Operação](/docs/pt/api-reference/execute-operation).
+
+## Casos de Uso
+
+- **Recuperação de transações**: Resolver transações travadas aumentando o preço do gas
+- **Congestionamento de rede**: Lidar com transações travadas devido ao congestionamento da rede
+- **Otimização de preço de gas**: Substituir transações com preço de gas baixo por outras mais altas
+- **Experiência do usuário**: Resolver automaticamente transações travadas para usuários
+
+## Melhores Práticas
+
+1. **Monitorar transações**: Acompanhe o status da transação para identificar transações travadas
+2. **Configurar overshoot**: Defina overshoot de preço de gas apropriado para substituição
+3. **Tratar falhas**: Verifique erros e trate falhas de substituição
+4. **Notificar usuários**: Notifique usuários quando transações forem desbloqueadas
+
+## Endpoints Relacionados
+
+- **[Obter Recibo](/docs/pt/api-reference/get-receipt)** - Verificar status da transação
+- **[Executar Operação](/docs/pt/api-reference/execute-operation)** - Executar novas transações
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> Este endpoint substitui transações travadas por versões com preço de gas mais alto. Use quando transações estiverem pendentes por períodos prolongados devido a preços de gas baixos.
+  </div>
+</div>

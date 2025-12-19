@@ -1,0 +1,254 @@
+---
+title: Execute Operation
+description: Execute operations with human-readable parameters.
+---
+
+Execute operations with human-readable parameters.
+
+## Endpoint
+
+```
+POST /execute
+```
+
+## Description
+
+Executes operations on Account Abstraction wallets using human-readable parameters. This endpoint handles the encoding and execution of UserOperations automatically.
+
+## Request Body
+
+```json
+{
+  "operations": [
+    {
+      "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+      "walletCustody": 2,
+      "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+      "funcSignature": "transfer(address,uint256)",
+      "funcParams": ["0x106eB473f541E9485bB428aeC502c2FEa1467779", "1000000000000000000"],
+      "value": "0",
+      "validAfter": 1718733600,
+      "validUnitl": 1718733700
+    }
+  ],
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+    "signer": {
+      "clientId": "your-fireblocks-client-id",
+      "versionId": "1"
+    },
+    "factory": "0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A",
+    "paymaster": "0x8D120E0A8a6aB93442B9839a7D6854De874A93fd"
+  }
+}
+```
+
+### Request Parameters
+
+#### `operations` (array, required)
+
+Array of operations to execute.
+
+- **`wallet`** (string, optional): The wallet address. Required if `salt` is empty.
+- **`salt`** (string, optional): The salt to identify the wallet. Required if `wallet` is empty.
+- **`walletCustody`** (integer, required): The wallet custody classification (0-5)
+- **`to`** (string, required): The contract address for the execute operation
+- **`funcSignature`** (string, required): The function signature for the execution
+- **`funcParams`** (array, optional): The params for the function signature
+- **`value`** (string, optional): The value to be sent with the transaction
+- **`validAfter`** (integer, optional): The amount of time that the transaction validation starts being available
+- **`validUnitl`** (integer, optional): The amount of time that the transaction is valid for
+- **`dependsOn`** (integer, optional): The index of a transaction that has to succeed before executing this index
+
+#### `settings` (object, required)
+
+Configuration settings for execution.
+
+- **`rpc`** (string, required): The RPC endpoint for the chain
+- **`entryPoint`** (string, required): The entry point address on the provided chain
+- **`signer`** (object, required): Signer configuration (HSM or MPC)
+- **`factory`** (string, optional): The factory address on the provided chain
+- **`paymaster`** (string, optional): The paymaster address on the provided chain
+- **`aggregator`** (string, optional): The aggregator address on the provided chain
+- **`percentTxGasOvershoot`** (integer, optional): The amount of gas overshoot (in percent). Default is 50.
+- **`percentTxGasPriceOvershoot`** (string, optional): The amount of gas price overshoot (in percent)
+
+## Response
+
+```json
+{
+  "status": 1,
+  "txHash": "0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938",
+  "cumulativeGasUsed": 17033026,
+  "gasUsed": 34111,
+  "effectiveGasPrice": "1136849215",
+  "returnData": [],
+  "logs": []
+}
+```
+
+### Response Fields
+
+- **`status`** (integer): The status code (0 - failed, 1 - success, 4 - operations partially executed)
+- **`txHash`** (string): The transaction hash
+- **`cumulativeGasUsed`** (integer): The cumulative gas used
+- **`gasUsed`** (integer): The gas used
+- **`effectiveGasPrice`** (string): The effective gas price
+- **`returnData`** (array): The return data of the transaction
+- **`logs`** (array): The logs of the transaction
+
+## Example Request
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operations": [
+      {
+        "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+        "walletCustody": 2,
+        "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+        "funcSignature": "transfer(address,uint256)",
+        "funcParams": ["0x106eB473f541E9485bB428aeC502c2FEa1467779", "1000000000000000000"]
+      }
+    ],
+    "settings": {
+      "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "signer": {
+        "clientId": "your-fireblocks-client-id",
+        "versionId": "1"
+      }
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/execute', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    operations: [
+      {
+        wallet: '0x28097eF2268B553783D9c32A33ECb1bB78B209F3',
+        walletCustody: 2,
+        to: '0xB72F28d9c0f72d488813E57581C17C466855E1F7',
+        funcSignature: 'transfer(address,uint256)',
+        funcParams: ['0x106eB473f541E9485bB428aeC502c2FEa1467779', '1000000000000000000'],
+      },
+    ],
+    settings: {
+      rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      signer: {
+        clientId: 'your-fireblocks-client-id',
+        versionId: '1',
+      },
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Transaction hash:', result.txHash);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/execute"
+payload = {
+    "operations": [
+        {
+            "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+            "walletCustody": 2,
+            "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+            "funcSignature": "transfer(address,uint256)",
+            "funcParams": ["0x106eB473f541E9485bB428aeC502c2FEa1467779", "1000000000000000000"]
+        }
+    ],
+    "settings": {
+        "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+        "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+        "signer": {
+            "clientId": "your-fireblocks-client-id",
+            "versionId": "1"
+        }
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Transaction hash: {result['txHash']}")
+```
+
+</Tab>
+</Tabs>
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "invalid function signature"
+}
+```
+
+### 422 Unprocessable Entity
+
+Request valid but execution failed.
+
+```json
+{
+  "error": "insufficient funds"
+}
+```
+
+## Use Cases
+
+- **Token transfers**: Send ERC-20 tokens between wallets
+- **Smart contract interactions**: Call any smart contract function
+- **Batch operations**: Execute multiple operations in a single transaction
+- **Gas optimization**: Leverage Account Abstraction for efficient gas usage
+
+## Best Practices
+
+1. **Estimate gas first**: Use the estimate gas endpoint before execution
+2. **Validate parameters**: Ensure function signatures and parameters are correct
+3. **Handle partial execution**: Check status codes for partial execution scenarios
+4. **Monitor gas costs**: Track gas usage for optimization
+5. **Use paymasters**: Consider using paymasters for gasless transactions
+
+## Related Endpoints
+
+- **[Estimate Gas](/docs/en/api-reference/estimate-gas)** - Estimate gas costs before execution
+- **[Execute Encoded](/docs/en/api-reference/execute-encoded)** - Execute pre-encoded UserOperations
+- **[Get Receipt](/docs/en/api-reference/get-receipt)** - Get transaction receipts
+
+---
+
+<div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <div className="text-green-800 dark:text-green-200">
+    <strong>✅ Success:</strong> This endpoint automatically handles UserOperation encoding, gas estimation, and execution. Perfect for developers who want simplicity.
+  </div>
+</div>
+
+<div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Pro Tip:</strong> For advanced use cases requiring more control, use the estimate gas endpoint first, then execute encoded for fine-tuned gas management.
+  </div>
+</div>

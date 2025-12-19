@@ -1,0 +1,72 @@
+---
+title: Execute Encoded
+description: Execute pre-encoded UserOperations.
+---
+
+Execute pre-encoded UserOperations.
+
+## Endpoint
+
+```
+POST /executeEncoded
+```
+
+## Description
+
+Executes pre-encoded UserOperations that were obtained from the estimate gas endpoint. This is useful when you want to separate the gas estimation and execution steps.
+
+## Request Body
+
+```json
+{
+  "operations": [
+    {
+      "encodedUserOp": "0x...",
+      "userOpHash": "0x...",
+      "walletCustody": 2,
+      "validAfter": 1718733600,
+      "validUnitl": 1718733700,
+      "signature": "0x..."
+    }
+  ],
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+    "signer": {
+      "clientId": "your-fireblocks-client-id",
+      "versionId": "1"
+    }
+  }
+}
+```
+
+## Response
+
+Same as [Execute Operation](/docs/en/api-reference/execute-operation) endpoint.
+
+## Use Cases
+
+- **Advanced gas control**: Separate gas estimation from execution for fine-tuned control
+- **Pre-signed operations**: Execute operations that were encoded and signed earlier
+- **Batch optimization**: Optimize gas for multiple operations before execution
+- **Transaction queuing**: Queue transactions for execution at optimal times
+
+## Best Practices
+
+1. **Estimate first**: Always use estimate gas endpoint before encoding
+2. **Validate encoded data**: Ensure encoded UserOperations are valid before execution
+3. **Handle signatures**: Provide proper signatures for encoded operations
+4. **Monitor execution**: Track execution status and handle failures
+
+## Related Endpoints
+
+- **[Estimate Gas](/docs/en/api-reference/estimate-gas)** - Get encoded UserOperations
+- **[Execute Operation](/docs/en/api-reference/execute-operation)** - Execute operations directly
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> Use this endpoint when you need more control over gas estimation and execution timing. Perfect for advanced use cases requiring fine-tuned gas management.
+  </div>
+</div>

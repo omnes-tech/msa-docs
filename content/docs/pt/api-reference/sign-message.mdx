@@ -1,0 +1,165 @@
+---
+title: Assinar Mensagem
+description: Assinar mensagens arbitrárias com chaves HSM/MPC.
+---
+
+Assinar mensagens arbitrárias com chaves HSM/MPC.
+
+## Endpoint
+
+```
+POST /sign
+```
+
+## Descrição
+
+Assina mensagens arbitrárias usando chaves HSM/MPC. Suporta tanto mensagens brutas quanto dados estruturados EIP-712.
+
+## Corpo da Solicitação
+
+```json
+{
+  "messages": [
+    "hello world",
+    "hello web3"
+  ],
+  "format": "rsv",
+  "hashed": false,
+  "signer": {
+    "clientId": "your-fireblocks-client-id",
+    "versionId": "1"
+  },
+  "eip712": {
+    "address": "0x...",
+    "chainId": "137"
+  }
+}
+```
+
+## Resposta
+
+```json
+[
+  {
+    "address": "0xdb074b3c323a7ad418ebbe66bad231f43f680563",
+    "publicKey": "049113caedb5d570dc9a47974f819b9d2c88ffcf622c1f3c756be7955d9f16eae28d8f00ec4fa359c311ae4c25b58d2b1d872d6e4c37600494416d856615fb7e4b",
+    "signatures": [
+      {
+        "r": "...",
+        "s": "...",
+        "v": 27
+      }
+    ],
+    "errors": null
+  }
+]
+```
+
+### Campos da Resposta
+
+- **`address`** (string): O endereço público do signatário
+- **`publicKey`** (string): A chave pública do signatário
+- **`signatures`** (array): Array de objetos de assinatura com valores r, s, v
+- **`errors`** (array, nullable): Array de mensagens de erro se a assinatura falhou
+
+## Exemplo de Solicitação
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/sign \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      "hello world",
+      "hello web3"
+    ],
+    "format": "rsv",
+    "hashed": false,
+    "signer": {
+      "clientId": "your-fireblocks-client-id",
+      "versionId": "1"
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/sign', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    messages: ['hello world', 'hello web3'],
+    format: 'rsv',
+    hashed: false,
+    signer: {
+      clientId: 'your-fireblocks-client-id',
+      versionId: '1',
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Endereço do signatário:', result[0].address);
+console.log('Assinaturas:', result[0].signatures);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/sign"
+payload = {
+    "messages": [
+        "hello world",
+        "hello web3"
+    ],
+    "format": "rsv",
+    "hashed": False,
+    "signer": {
+        "clientId": "your-fireblocks-client-id",
+        "versionId": "1"
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Endereço do signatário: {result[0]['address']}")
+print(f"Assinaturas: {result[0]['signatures']}")
+```
+
+</Tab>
+</Tabs>
+
+## Casos de Uso
+
+- **Autenticação de mensagens**: Assinar mensagens para fins de autenticação
+- **Assinatura EIP-712**: Assinar dados estruturados para dApps
+- **Assinatura em lote**: Assinar múltiplas mensagens em uma única solicitação
+- **Assinatura HSM/MPC**: Usar infraestrutura de assinatura de nível empresarial
+
+## Melhores Práticas
+
+1. **Usar EIP-712 para dados estruturados**: Use formato EIP-712 para melhor UX e segurança
+2. **Tratar erros**: Verifique erros no array de resposta
+3. **Verificar assinaturas**: Sempre verifique assinaturas on-chain ou off-chain
+4. **Proteger credenciais**: Nunca exponha credenciais HSM/MPC
+
+## Endpoints Relacionados
+
+- **[Transação Signatário](/docs/pt/api-reference/transact-signer)** - Executar transações com HSM/MPC
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> Use formato EIP-712 para assinar dados estruturados. Isso fornece melhor UX e segurança comparado à assinatura de mensagens brutas.
+  </div>
+</div>

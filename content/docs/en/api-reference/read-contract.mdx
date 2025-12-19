@@ -1,0 +1,155 @@
+---
+title: Read Contract
+description: Read smart contract state from the blockchain.
+---
+
+Read smart contract state from the blockchain.
+
+## Endpoint
+
+```
+POST /read
+```
+
+## Description
+
+Reads smart contract state from the blockchain by calling view functions.
+
+## Request Body
+
+```json
+{
+  "reads": [
+    {
+      "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+      "funcSignature": "balanceOf(address)",
+      "funcParams": ["0x28097eF2268B553783D9c32A33ECb1bB78B209F3"],
+      "returnSignature": "uint256",
+      "from": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+    }
+  ],
+  "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+```
+
+## Response
+
+```json
+[
+  {
+    "readIndex": 0,
+    "results": ["1000000000000000000"],
+    "errors": null
+  }
+]
+```
+
+### Response Fields
+
+- **`readIndex`** (integer): The index of the read operation in the request array
+- **`results`** (array): The decoded return values from the contract function
+- **`errors`** (string, nullable): Error message if the read operation failed
+
+## Example Request
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/read \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reads": [
+      {
+        "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+        "funcSignature": "balanceOf(address)",
+        "funcParams": ["0x28097eF2268B553783D9c32A33ECb1bB78B209F3"],
+        "returnSignature": "uint256",
+        "from": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+      }
+    ],
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/read', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    reads: [
+      {
+        to: '0xB72F28d9c0f72d488813E57581C17C466855E1F7',
+        funcSignature: 'balanceOf(address)',
+        funcParams: ['0x28097eF2268B553783D9c32A33ECb1bB78B209F3'],
+        returnSignature: 'uint256',
+        from: '0x28097eF2268B553783D9c32A33ECb1bB78B209F3',
+      },
+    ],
+    rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+  }),
+});
+
+const result = await response.json();
+console.log('Balance:', result[0].results[0]);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/read"
+payload = {
+    "reads": [
+        {
+            "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+            "funcSignature": "balanceOf(address)",
+            "funcParams": ["0x28097eF2268B553783D9c32A33ECb1bB78B209F3"],
+            "returnSignature": "uint256",
+            "from": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+        }
+    ],
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Balance: {result[0]['results'][0]}")
+```
+
+</Tab>
+</Tabs>
+
+## Use Cases
+
+- **Token balances**: Check ERC-20 token balances
+- **Contract state**: Read any public contract state
+- **Batch reads**: Read multiple contract values in a single request
+- **Data validation**: Verify contract state before operations
+
+## Best Practices
+
+1. **Use correct return signatures**: Ensure return signature matches the function return type
+2. **Handle errors**: Check for errors in the response array
+3. **Batch operations**: Read multiple values in a single request for efficiency
+4. **Validate addresses**: Ensure contract addresses are correct
+
+## Related Endpoints
+
+- **[Filter Events](/docs/en/api-reference/filter-events)** - Filter contract events
+- **[Get Receipt](/docs/en/api-reference/get-receipt)** - Get transaction receipts with decoded logs
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> This endpoint only calls view functions and doesn't require gas or signing. Perfect for reading contract state without transactions.
+  </div>
+</div>

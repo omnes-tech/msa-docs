@@ -1,0 +1,155 @@
+---
+title: Ler Contrato
+description: Ler estado de smart contract da blockchain.
+---
+
+Ler estado de smart contract da blockchain.
+
+## Endpoint
+
+```
+POST /read
+```
+
+## Descrição
+
+Lê o estado de smart contracts da blockchain chamando funções view.
+
+## Corpo da Solicitação
+
+```json
+{
+  "reads": [
+    {
+      "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+      "funcSignature": "balanceOf(address)",
+      "funcParams": ["0x28097eF2268B553783D9c32A33ECb1bB78B209F3"],
+      "returnSignature": "uint256",
+      "from": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+    }
+  ],
+  "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+```
+
+## Resposta
+
+```json
+[
+  {
+    "readIndex": 0,
+    "results": ["1000000000000000000"],
+    "errors": null
+  }
+]
+```
+
+### Campos da Resposta
+
+- **`readIndex`** (integer): O índice da operação de leitura no array de solicitação
+- **`results`** (array): Os valores de retorno decodificados da função do contrato
+- **`errors`** (string, nullable): Mensagem de erro se a operação de leitura falhou
+
+## Exemplo de Solicitação
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/read \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reads": [
+      {
+        "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+        "funcSignature": "balanceOf(address)",
+        "funcParams": ["0x28097eF2268B553783D9c32A33ECb1bB78B209F3"],
+        "returnSignature": "uint256",
+        "from": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+      }
+    ],
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/read', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    reads: [
+      {
+        to: '0xB72F28d9c0f72d488813E57581C17C466855E1F7',
+        funcSignature: 'balanceOf(address)',
+        funcParams: ['0x28097eF2268B553783D9c32A33ECb1bB78B209F3'],
+        returnSignature: 'uint256',
+        from: '0x28097eF2268B553783D9c32A33ECb1bB78B209F3',
+      },
+    ],
+    rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+  }),
+});
+
+const result = await response.json();
+console.log('Saldo:', result[0].results[0]);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/read"
+payload = {
+    "reads": [
+        {
+            "to": "0xB72F28d9c0f72d488813E57581C17C466855E1F7",
+            "funcSignature": "balanceOf(address)",
+            "funcParams": ["0x28097eF2268B553783D9c32A33ECb1bB78B209F3"],
+            "returnSignature": "uint256",
+            "from": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+        }
+    ],
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Saldo: {result[0]['results'][0]}")
+```
+
+</Tab>
+</Tabs>
+
+## Casos de Uso
+
+- **Saldos de tokens**: Verificar saldos de tokens ERC-20
+- **Estado do contrato**: Ler qualquer estado público do contrato
+- **Leituras em lote**: Ler múltiplos valores de contrato em uma única solicitação
+- **Validação de dados**: Verificar estado do contrato antes de operações
+
+## Melhores Práticas
+
+1. **Usar assinaturas de retorno corretas**: Garanta que a assinatura de retorno corresponda ao tipo de retorno da função
+2. **Tratar erros**: Verifique erros no array de resposta
+3. **Operações em lote**: Leia múltiplos valores em uma única solicitação para eficiência
+4. **Validar endereços**: Garanta que os endereços dos contratos estão corretos
+
+## Endpoints Relacionados
+
+- **[Filtrar Eventos](/docs/pt/api-reference/filter-events)** - Filtrar eventos de contratos
+- **[Obter Recibo](/docs/pt/api-reference/get-receipt)** - Obter recibos de transação com logs decodificados
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> Este endpoint apenas chama funções view e não requer gas ou assinatura. Perfeito para ler estado do contrato sem transações.
+  </div>
+</div>

@@ -1,0 +1,74 @@
+---
+title: Estimar Gas
+description: Estimar custos de gas para operações antes da execução.
+---
+
+Estimar custos de gas para operações antes da execução.
+
+## Endpoint
+
+```
+POST /estimateGas
+```
+
+## Descrição
+
+Estima os custos de gas para operações antes de realmente executá-las. Este endpoint retorna a UserOperation codificada e estimativas de gas que podem ser usadas com o endpoint execute encoded.
+
+## Corpo da Solicitação
+
+Mesmo que o endpoint [Executar Operação](/docs/pt/api-reference/execute-operation).
+
+## Resposta
+
+```json
+{
+  "status": 1,
+  "gas": 21000,
+  "userOps": [
+    {
+      "encodedUserOp": "0x...",
+      "userOpHash": "0x..."
+    }
+  ],
+  "error": null
+}
+```
+
+### Campos da Resposta
+
+- **`status`** (integer): O código de status (0 - falhou, 1 - sucesso)
+- **`gas`** (integer): A quantidade estimada de gas
+- **`userOps`** (array): Array de UserOperations codificadas
+- **`error`** (string, nullable): Mensagem de erro se a estimativa falhou
+
+## Exemplo de Solicitação
+
+Veja [Executar Operação](/docs/pt/api-reference/execute-operation) para exemplos de solicitação.
+
+## Casos de Uso
+
+- **Otimização de gas**: Estimar gas antes da execução para otimizar custos
+- **Experiência do usuário**: Mostrar aos usuários custos estimados de gas antes de confirmar transações
+- **Operações em lote**: Estimar gas para múltiplas operações
+- **Validação pré-execução**: Verificar se as operações terão sucesso antes da execução
+
+## Melhores Práticas
+
+1. **Sempre estimar primeiro**: Estime gas antes da execução para melhor experiência do usuário
+2. **Tratar falhas de estimativa**: Verifique erros na resposta
+3. **Usar operações codificadas**: Use as UserOperations codificadas deste endpoint com execute encoded
+4. **Monitorar tendências de gas**: Acompanhe estimativas de gas ao longo do tempo para otimização
+
+## Endpoints Relacionados
+
+- **[Executar Operação](/docs/pt/api-reference/execute-operation)** - Executar operações diretamente
+- **[Executar Codificado](/docs/pt/api-reference/execute-encoded)** - Executar usando UserOperations codificadas deste endpoint
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> Use este endpoint para obter UserOperations codificadas que podem ser executadas depois. Isso é útil para separar estimativa de gas da execução.
+  </div>
+</div>

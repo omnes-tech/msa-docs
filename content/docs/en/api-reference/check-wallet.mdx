@@ -1,0 +1,195 @@
+---
+title: Check Wallet
+description: Verify wallet existence and status on the blockchain.
+---
+
+Verify wallet existence and status on the blockchain.
+
+## Endpoint
+
+```
+POST /check
+```
+
+## Description
+
+Checks if a wallet exists on the blockchain based on the provided salt or wallet address. This is useful for verifying wallet deployment status before attempting operations.
+
+## Request Body
+
+```json
+{
+  "accounts": [
+    {
+      "salt": "example@gmail.com",
+      "walletCustody": 2
+    }
+  ],
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+    "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+    "beaconAdminCreationCode": "0x60a0604052..."
+  }
+}
+```
+
+### Request Parameters
+
+#### `accounts` (array, required)
+
+Array of account check requests.
+
+- **`salt`** (string, optional): The salt to check the wallet address. Required if `wallet` is empty.
+- **`wallet`** (string, optional): The wallet address to check. Required if `salt` is empty.
+- **`walletCustody`** (integer, optional): The wallet custody classification (1-5). Only required if wallet address is empty.
+
+#### `settings` (object, required)
+
+Configuration settings for the check.
+
+- **`rpc`** (string, required): The RPC endpoint for the chain
+- **`factory`** (string, optional): The factory address of the provided chain
+- **`beaconAdminAddress`** (string, optional): The beacon admin address of the provided chain
+- **`beaconAdminCreationCode`** (string, optional): The beacon creation code of the provided chain
+
+## Response
+
+```json
+[
+  {
+    "exists": true,
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "salt": "example@gmail.com",
+    "error": null
+  }
+]
+```
+
+### Response Fields
+
+- **`exists`** (boolean): Whether the account exists on the blockchain
+- **`wallet`** (string): The wallet address checked
+- **`salt`** (string): The salt used for the check
+- **`error`** (string, nullable): Error message if check failed
+
+## Example Request
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/check \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [
+      {
+        "salt": "user@example.com",
+        "walletCustody": 2
+      }
+    ],
+    "settings": {
+      "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+      "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+      "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+      "beaconAdminCreationCode": "0x60a0604052..."
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/check', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    accounts: [
+      {
+        salt: 'user@example.com',
+        walletCustody: 2,
+      },
+    ],
+    settings: {
+      rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+      factory: '0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE',
+      beaconAdminAddress: '0x183A1019242865C39f06C78716933259A161E99A',
+      beaconAdminCreationCode: '0x60a0604052...',
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Wallet exists:', result[0].exists);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/check"
+payload = {
+    "accounts": [
+        {
+            "salt": "user@example.com",
+            "walletCustody": 2
+        }
+    ],
+    "settings": {
+        "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+        "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+        "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+        "beaconAdminCreationCode": "0x60a0604052..."
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Wallet exists: {result[0]['exists']}")
+```
+
+</Tab>
+</Tabs>
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "invalid rpc"
+}
+```
+
+## Use Cases
+
+- **Pre-creation verification**: Check if a wallet already exists before attempting creation
+- **Status monitoring**: Verify wallet deployment status
+- **Batch verification**: Check multiple wallet addresses at once
+- **Address validation**: Confirm wallet addresses are deployed
+
+## Best Practices
+
+1. **Check before creating**: Always verify wallet doesn't exist before creation
+2. **Handle errors**: Check for errors in the response array
+3. **Use consistent parameters**: Use the same salt and custody type used for prediction/creation
+
+## Related Endpoints
+
+- **[Predict Wallet](/docs/en/api-reference/predict-wallet)** - Predict wallet address
+- **[Create Wallet](/docs/en/api-reference/create-wallet)** - Deploy new wallets
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> Use this endpoint to verify wallet existence before attempting operations. This helps prevent errors and provides better user experience.
+  </div>
+</div>

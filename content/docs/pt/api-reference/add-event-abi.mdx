@@ -1,0 +1,211 @@
+---
+title: Adicionar ABI de Evento
+description: Adicionar ABIs de eventos personalizados ao sistema.
+---
+
+Adicionar ABIs de eventos personalizados ao sistema.
+
+## Endpoint
+
+```
+POST /addEvent
+```
+
+## Descrição
+
+Adiciona ABIs de eventos personalizados ao sistema para uso em filtragem e decodificação de eventos.
+
+## Corpo da Solicitação
+
+```json
+{
+  "eventABI": {
+    "type": "event",
+    "name": "Transfer",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  }
+}
+```
+
+## Resposta
+
+```json
+{
+  "status": 200,
+  "eventDef": "event Transfer(address indexed from, address indexed to, uint256 value)"
+}
+```
+
+### Campos da Resposta
+
+- **`status`** (integer): Código de status HTTP (200 para sucesso)
+- **`eventDef`** (string): A string de definição de evento canônica
+
+## Exemplo de Solicitação
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/addEvent \
+  -H "Content-Type: application/json" \
+  -d '{
+    "eventABI": {
+      "type": "event",
+      "name": "Transfer",
+      "inputs": [
+        {
+          "name": "from",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "to",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "value",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/addEvent', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    eventABI: {
+      type: 'event',
+      name: 'Transfer',
+      inputs: [
+        {
+          name: 'from',
+          type: 'address',
+          indexed: true,
+          internalType: 'address',
+        },
+        {
+          name: 'to',
+          type: 'address',
+          indexed: true,
+          internalType: 'address',
+        },
+        {
+          name: 'value',
+          type: 'uint256',
+          indexed: false,
+          internalType: 'uint256',
+        },
+      ],
+      anonymous: false,
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Evento registrado:', result.eventDef);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/addEvent"
+payload = {
+    "eventABI": {
+        "type": "event",
+        "name": "Transfer",
+        "inputs": [
+            {
+                "name": "from",
+                "type": "address",
+                "indexed": True,
+                "internalType": "address"
+            },
+            {
+                "name": "to",
+                "type": "address",
+                "indexed": True,
+                "internalType": "address"
+            },
+            {
+                "name": "value",
+                "type": "uint256",
+                "indexed": False,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": False
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Evento registrado: {result['eventDef']}")
+```
+
+</Tab>
+</Tabs>
+
+## Casos de Uso
+
+- **Eventos personalizados**: Registrar eventos de smart contracts personalizados
+- **Filtragem de eventos**: Habilitar filtragem de eventos não pré-registrados
+- **Decodificação**: Habilitar decodificação adequada de eventos de contratos personalizados
+- **Integração**: Suportar integração com qualquer contrato compatível com EVM
+
+## Melhores Práticas
+
+1. **Registrar antes de filtrar**: Adicione ABIs de eventos antes de filtrar eventos
+2. **Usar formato correto**: Garanta que o formato ABI corresponda à definição de evento Solidity
+3. **Tratar duplicatas**: Verifique se o evento já existe antes de adicionar
+4. **Validar ABI**: Garanta que o ABI do evento seja válido antes do registro
+
+## Endpoints Relacionados
+
+- **[Filtrar Eventos](/docs/pt/api-reference/filter-events)** - Filtrar eventos usando ABIs registrados
+- **[Obter Recibo](/docs/pt/api-reference/get-receipt)** - Obter recibos com logs de eventos decodificados
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> Registre ABIs de eventos personalizados para filtrar e decodificar eventos de qualquer contrato. Isso permite integração com contratos não pré-registrados no sistema.
+  </div>
+</div>

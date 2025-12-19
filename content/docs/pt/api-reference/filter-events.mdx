@@ -1,0 +1,153 @@
+---
+title: Filtrar Eventos
+description: Filtrar eventos da blockchain com base em critérios especificados.
+---
+
+Filtrar eventos da blockchain com base em critérios especificados.
+
+## Endpoint
+
+```
+POST /filterEvent
+```
+
+## Descrição
+
+Filtra eventos da blockchain com base em critérios especificados incluindo nome do evento, endereços de contratos, intervalos de blocos e valores de campos.
+
+## Corpo da Solicitação
+
+```json
+{
+  "contracts": ["0x96AF30413A6999f9948c7c88b0dFf8B56Bf31EF6"],
+  "eventName": "Transfer",
+  "eventDef": "event Transfer(address indexed from, address indexed to, uint256 value)",
+  "fields": {
+    "from": "0x0000000000000000000000000000000000000000",
+    "to": ["0x106eB473f541E9485bB428aeC502c2FEa1467779"]
+  },
+  "fromBlock": "0x0",
+  "toBlock": "latest",
+  "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+```
+
+## Resposta
+
+```json
+{
+  "requestStatus": 200,
+  "txHashes": [
+    "0x81eb1ce8c61a966a1a9ca84bf3701f934977d36e76f5b255c43478a3d59936e0"
+  ]
+}
+```
+
+### Campos da Resposta
+
+- **`requestStatus`** (integer): Código de status HTTP da solicitação
+- **`txHashes`** (array): Array de hashes de transação contendo os eventos filtrados
+
+## Exemplo de Solicitação
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/filterEvent \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contracts": ["0x96AF30413A6999f9948c7c88b0dFf8B56Bf31EF6"],
+    "eventName": "Transfer",
+    "eventDef": "event Transfer(address indexed from, address indexed to, uint256 value)",
+    "fields": {
+      "from": "0x0000000000000000000000000000000000000000",
+      "to": ["0x106eB473f541E9485bB428aeC502c2FEa1467779"]
+    },
+    "fromBlock": "0x0",
+    "toBlock": "latest",
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/filterEvent', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    contracts: ['0x96AF30413A6999f9948c7c88b0dFf8B56Bf31EF6'],
+    eventName: 'Transfer',
+    eventDef: 'event Transfer(address indexed from, address indexed to, uint256 value)',
+    fields: {
+      from: '0x0000000000000000000000000000000000000000',
+      to: ['0x106eB473f541E9485bB428aeC502c2FEa1467779'],
+    },
+    fromBlock: '0x0',
+    toBlock: 'latest',
+    rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+  }),
+});
+
+const result = await response.json();
+console.log('Transações encontradas:', result.txHashes.length);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/filterEvent"
+payload = {
+    "contracts": ["0x96AF30413A6999f9948c7c88b0dFf8B56Bf31EF6"],
+    "eventName": "Transfer",
+    "eventDef": "event Transfer(address indexed from, address indexed to, uint256 value)",
+    "fields": {
+        "from": "0x0000000000000000000000000000000000000000",
+        "to": ["0x106eB473f541E9485bB428aeC502c2FEa1467779"]
+    },
+    "fromBlock": "0x0",
+    "toBlock": "latest",
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Transações encontradas: {len(result['txHashes'])}")
+```
+
+</Tab>
+</Tabs>
+
+## Casos de Uso
+
+- **Monitoramento de eventos**: Rastrear eventos específicos de contratos
+- **Descoberta de transações**: Encontrar transações contendo eventos específicos
+- **Análise**: Analisar padrões de eventos entre contratos
+- **Sistemas de notificação**: Acionar ações com base em eventos
+
+## Melhores Práticas
+
+1. **Usar campos indexados**: Filtre em campos de eventos indexados para melhor desempenho
+2. **Limitar intervalos de blocos**: Use intervalos de blocos específicos em vez de escanear toda a chain
+3. **Adicionar ABIs de eventos**: Use o endpoint add event ABI para registrar eventos personalizados
+4. **Tratar grandes conjuntos de resultados**: Pagine resultados para grandes conjuntos de eventos
+
+## Endpoints Relacionados
+
+- **[Adicionar ABI de Evento](/docs/pt/api-reference/add-event-abi)** - Registrar ABIs de eventos personalizados
+- **[Obter Recibo](/docs/pt/api-reference/get-receipt)** - Obter detalhes completos da transação com logs decodificados
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> Registre ABIs de eventos personalizados usando o endpoint add event ABI para filtrar eventos de qualquer contrato, mesmo que não estejam pré-registrados.
+  </div>
+</div>

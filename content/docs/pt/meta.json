@@ -11,49 +11,71 @@
       ]
     },
     {
-      "title": "Gerenciamento de Carteiras",
+      "title": "Documentação",
       "pages": [
-        "wallet-management/creating-wallets",
-        "wallet-management/predicting-addresses",
-        "wallet-management/checking-wallets",
-        "wallet-management/custody-types"
-      ]
-    },
-    {
-      "title": "Execução de Transações",
-      "pages": [
-        "transaction-execution/basic-execution",
-        "transaction-execution/encoded-execution",
-        "transaction-execution/passkey-execution",
-        "transaction-execution/gas-estimation"
-      ]
-    },
-    {
-      "title": "SDK",
-      "pages": [
-        "sdk/typescript-sdk"
-      ]
-    },
-    {
-      "title": "Exemplos de Integração",
-      "pages": [
-        "examples/javascript-examples",
-        "examples/python-examples",
-        "examples/curl-examples"
+        {
+          "title": "Gerenciamento de Carteiras",
+          "pages": [
+            "wallet-management/creating-wallets",
+            "wallet-management/predicting-addresses",
+            "wallet-management/checking-wallets",
+            "wallet-management/custody-types"
+          ]
+        },
+        {
+          "title": "Execução de Transações",
+          "pages": [
+            "transaction-execution/basic-execution",
+            "transaction-execution/encoded-execution",
+            "transaction-execution/passkey-execution",
+            "transaction-execution/gas-estimation"
+          ]
+        },
+        {
+          "title": "SDK",
+          "pages": [
+            "sdk/typescript-sdk"
+          ]
+        },
+        {
+          "title": "Exemplos de Integração",
+          "pages": [
+            "examples/javascript-examples",
+            "examples/python-examples",
+            "examples/curl-examples"
+          ]
+        },
+        {
+          "title": "Avançado",
+          "pages": [
+            "advanced/multisig",
+            "advanced/passkeys",
+            "advanced/troubleshooting"
+          ]
+        }
       ]
     },
     {
       "title": "Referência da API",
       "pages": [
+        "api-reference/api-overview",
+        "api-reference/predict-wallet",
+        "api-reference/create-wallet",
+        "api-reference/check-wallet",
+        "api-reference/execute-operation",
+        "api-reference/execute-encoded",
+        "api-reference/execute-passkey",
+        "api-reference/estimate-gas",
+        "api-reference/read-contract",
+        "api-reference/get-receipt",
+        "api-reference/filter-events",
+        "api-reference/sign-message",
+        "api-reference/passkey-hash",
+        "api-reference/transact-signer",
+        "api-reference/unstuck-transaction",
+        "api-reference/add-event-abi",
+        "api-reference/add-error-abi",
         "api-reference/interactive-docs"
-      ]
-    },
-    {
-      "title": "Avançado",
-      "pages": [
-        "advanced/multisig",
-        "advanced/passkeys",
-        "advanced/troubleshooting"
       ]
     }
   ]

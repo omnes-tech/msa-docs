@@ -1,0 +1,71 @@
+---
+title: Execute Passkey
+description: Execute operations with passkey validation.
+---
+
+Execute operations with passkey validation.
+
+## Endpoint
+
+```
+POST /executePasskey
+```
+
+## Description
+
+Executes operations with passkey validation. This endpoint requires passkey signatures that can be obtained from the passkey hash endpoint.
+
+## Request Body
+
+```json
+{
+  "operations": [
+    {
+      "encodedUserOp": "0x...",
+      "userOpHash": "0x...",
+      "validationData": {
+        "signature": "base64-signature",
+        "authenticatorData": "base64-data",
+        "clientDataJSON": "base64-json",
+        "validAfter": 1718733600,
+        "validUnitl": 1718733700
+      }
+    }
+  ],
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
+  }
+}
+```
+
+## Response
+
+Same as [Execute Operation](/docs/en/api-reference/execute-operation) endpoint.
+
+## Use Cases
+
+- **Passwordless transactions**: Execute transactions using biometric authentication
+- **Enhanced security**: Combine passkey validation with Account Abstraction
+- **User-friendly UX**: Provide seamless transaction signing experience
+- **Mobile applications**: Leverage device biometrics for transaction signing
+
+## Best Practices
+
+1. **Get passkey hash first**: Use passkey hash endpoint to get the hash to sign
+2. **Validate passkey data**: Ensure passkey signatures are valid before execution
+3. **Handle time windows**: Use validAfter and validUntil for time-based validation
+4. **Error handling**: Check for passkey validation errors
+
+## Related Endpoints
+
+- **[Passkey Hash](/docs/en/api-reference/passkey-hash)** - Get hash to sign with passkey
+- **[Execute Operation](/docs/en/api-reference/execute-operation)** - Execute standard operations
+
+---
+
+<div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <div className="text-green-800 dark:text-green-200">
+    <strong>✅ Success:</strong> Passkey execution provides a seamless, passwordless transaction experience. Users can sign transactions using biometric authentication on their devices.
+  </div>
+</div>

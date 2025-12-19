@@ -7,6 +7,7 @@ import { SidebarLinkFix } from '@/components/SidebarLinkFix';
 // Mapping of English titles to Portuguese titles for sidebar sections
 const titleTranslations: Record<string, string> = {
   'Getting Started': 'Primeiros Passos',
+  'Documentation': 'Documentação',
   'Wallet Management': 'Gerenciamento de Carteiras',
   'Transaction Execution': 'Execução de Transações',
   'Integration Examples': 'Exemplos de Integração',

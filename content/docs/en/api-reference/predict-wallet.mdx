@@ -1,0 +1,198 @@
+---
+title: Predict Wallet
+description: Predict wallet addresses before creation based on salt and custody type.
+---
+
+Predict wallet addresses before creation based on salt and custody type.
+
+## Endpoint
+
+```
+POST /predict
+```
+
+## Description
+
+Predicts the wallet address that will be generated for a given salt and wallet custody type. This is useful for determining the wallet address before actually deploying it on the blockchain.
+
+## Request Body
+
+```json
+{
+  "accounts": [
+    {
+      "salt": "example@gmail.com",
+      "walletCustody": 2
+    }
+  ],
+  "settings": {
+    "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+    "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+    "beaconAdminCreationCode": "0x60a0604052..."
+  }
+}
+```
+
+### Request Parameters
+
+#### `accounts` (array, required)
+
+Array of account prediction requests.
+
+- **`salt`** (string, required): The salt to predict the wallet address
+- **`walletCustody`** (integer, required): The wallet custody classification (1-5)
+
+#### `settings` (object, required)
+
+Configuration settings for the prediction.
+
+- **`factory`** (string, required): The factory address of the provided chain
+- **`beaconAdminAddress`** (string, required): The beacon admin address of the provided chain
+- **`beaconAdminCreationCode`** (string, required): The beacon creation code of the provided chain
+
+## Response
+
+```json
+[
+  {
+    "salt": "example@gmail.com",
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "error": null
+  }
+]
+```
+
+### Response Fields
+
+- **`salt`** (string): The salt used for prediction
+- **`wallet`** (string): The predicted wallet address
+- **`error`** (string, nullable): Error message if prediction failed
+
+## Example Request
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [
+      {
+        "salt": "user@example.com",
+        "walletCustody": 2
+      }
+    ],
+    "settings": {
+      "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+      "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+      "beaconAdminCreationCode": "0x60a0604052..."
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/predict', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    accounts: [
+      {
+        salt: 'user@example.com',
+        walletCustody: 2,
+      },
+    ],
+    settings: {
+      factory: '0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE',
+      beaconAdminAddress: '0x183A1019242865C39f06C78716933259A161E99A',
+      beaconAdminCreationCode: '0x60a0604052...',
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Predicted wallet:', result[0].wallet);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/predict"
+payload = {
+    "accounts": [
+        {
+            "salt": "user@example.com",
+            "walletCustody": 2
+        }
+    ],
+    "settings": {
+        "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+        "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+        "beaconAdminCreationCode": "0x60a0604052..."
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Predicted wallet: {result[0]['wallet']}")
+```
+
+</Tab>
+</Tabs>
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "invalid salt format"
+}
+```
+
+### 422 Unprocessable Entity
+
+Request valid but prediction failed.
+
+```json
+{
+  "error": "internal application error"
+}
+```
+
+## Use Cases
+
+- **Pre-funding wallets**: Predict the address before deployment to fund it
+- **Address verification**: Confirm wallet addresses match expectations
+- **Batch operations**: Predict multiple addresses for bulk operations
+- **Testing**: Verify address generation logic before production
+
+## Best Practices
+
+1. **Always predict before creating**: Predict the wallet address first to ensure it matches your expectations
+2. **Use consistent salts**: The same salt will always generate the same address
+3. **Validate addresses**: Verify predicted addresses match your requirements before funding
+4. **Handle errors gracefully**: Check for errors in the response array
+
+## Related Endpoints
+
+- **[Create Wallet](/docs/en/api-reference/create-wallet)** - Deploy the predicted wallet
+- **[Check Wallet](/docs/en/api-reference/check-wallet)** - Verify wallet existence
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> The predicted address is deterministic - the same salt and custody type will always generate the same address. This allows you to fund wallets before deployment.
+  </div>
+</div>

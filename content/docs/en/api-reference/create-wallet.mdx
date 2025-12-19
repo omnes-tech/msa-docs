@@ -1,0 +1,252 @@
+---
+title: Create Wallet
+description: Deploy new Account Abstraction wallets on the blockchain.
+---
+
+Deploy new Account Abstraction wallets on the blockchain.
+
+## Endpoint
+
+```
+POST /create
+```
+
+## Description
+
+Creates and deploys new Account Abstraction wallets on the blockchain based on the specified salt and wallet custody type. The wallet will be deployed as a smart contract on the specified network.
+
+## Request Body
+
+```json
+{
+  "accounts": [
+    {
+      "salt": "example@gmail.com",
+      "walletCustody": 2,
+      "passkeyPubKey": ["base64-encoded-key"]
+    }
+  ],
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+    "signer": {
+      "clientId": "your-fireblocks-client-id",
+      "versionId": "1"
+    },
+    "factory": "0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A",
+    "beaconAdminAddress": "0x189BCA30F33FEbe6f9E3722909455B7666bC7DEA",
+    "beaconAdminCreationCode": "0x60a0604052..."
+  }
+}
+```
+
+### Request Parameters
+
+#### `accounts` (array, required)
+
+Array of accounts to create.
+
+- **`salt`** (string, optional): The salt to predict/create the wallet address. Required if `wallet` is empty.
+- **`wallet`** (string, optional): The wallet address. Required if `salt` is empty.
+- **`walletCustody`** (integer, required): The wallet custody classification (0-5)
+- **`passkeyPubKey`** (array, optional): The passkey public key in base64 format. Required if wallet custody is 2, 4, or 5.
+- **`signers`** (array, optional): The signers of the validator. Required if validator type is 3 or 4.
+- **`threshold`** (string, optional): The threshold of the validator. Required if validator type is 3 or 4.
+- **`legacyWallet`** (boolean, optional): The legacy wallet flag. Only required if wallet was created before the MSA upgrade.
+
+#### `settings` (object, required)
+
+Configuration settings for wallet creation.
+
+- **`rpc`** (string, required): The RPC endpoint for the chain
+- **`entryPoint`** (string, required): The entry point address on the provided chain
+- **`signer`** (object, required): Signer configuration (HSM or MPC)
+- **`factory`** (string, optional): The factory address on the provided chain
+- **`beaconAdminAddress`** (string, optional): The beacon admin address on the provided chain
+- **`beaconAdminCreationCode`** (string, optional): The beacon admin creation code, only required for account creations
+- **`paymaster`** (string, optional): The paymaster address on the provided chain
+- **`aggregator`** (string, optional): The aggregator address on the provided chain
+- **`validator`** (string, optional): The validator address on the provided chain
+
+## Response
+
+```json
+{
+  "status": 1,
+  "txHash": "0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938",
+  "cumulativeGasUsed": 17033026,
+  "gasUsed": 34111,
+  "effectiveGasPrice": "1136849215",
+  "returnData": [
+    {
+      "0": {
+        "salt": "example@gmail.com",
+        "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3"
+      }
+    }
+  ],
+  "logs": []
+}
+```
+
+### Response Fields
+
+- **`status`** (integer): The status code of the transaction (0 - failed, 1 - success, 2 - account already created, 3 - accounts partially created)
+- **`txHash`** (string): The transaction hash
+- **`cumulativeGasUsed`** (integer): The cumulative gas used by the transaction
+- **`gasUsed`** (integer): The gas used by the transaction
+- **`effectiveGasPrice`** (string): The effective gas price of the transaction
+- **`returnData`** (array): The return data of the transaction
+- **`logs`** (array): The logs of the transaction
+
+## Example Request
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [
+      {
+        "salt": "user@example.com",
+        "walletCustody": 2,
+        "passkeyPubKey": ["base64-encoded-key"]
+      }
+    ],
+    "settings": {
+      "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+      "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "signer": {
+        "clientId": "your-fireblocks-client-id",
+        "versionId": "1"
+      },
+      "factory": "0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A"
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/create', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    accounts: [
+      {
+        salt: 'user@example.com',
+        walletCustody: 2,
+        passkeyPubKey: ['base64-encoded-key'],
+      },
+    ],
+    settings: {
+      rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      signer: {
+        clientId: 'your-fireblocks-client-id',
+        versionId: '1',
+      },
+      factory: '0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A',
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Wallet created:', result.txHash);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/create"
+payload = {
+    "accounts": [
+        {
+            "salt": "user@example.com",
+            "walletCustody": 2,
+            "passkeyPubKey": ["base64-encoded-key"]
+        }
+    ],
+    "settings": {
+        "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+        "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+        "signer": {
+            "clientId": "your-fireblocks-client-id",
+            "versionId": "1"
+        },
+        "factory": "0xA61de0370Cd362FE335F5B9957d2a4edE0b8E98A"
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Wallet created: {result['txHash']}")
+```
+
+</Tab>
+</Tabs>
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "invalid wallet custody type"
+}
+```
+
+### 422 Unprocessable Entity
+
+Request valid but execution failed.
+
+```json
+{
+  "error": "account already exists"
+}
+```
+
+## Use Cases
+
+- **User onboarding**: Create wallets for new users during registration
+- **Batch deployment**: Deploy multiple wallets in a single transaction
+- **Multi-signature setup**: Create wallets with shared custody
+- **Passkey integration**: Deploy wallets with biometric authentication
+
+## Best Practices
+
+1. **Fund before creation**: Ensure the predicted wallet address has sufficient native tokens for gas
+2. **Predict first**: Always predict the wallet address before creating to verify it matches expectations
+3. **Handle existing wallets**: Check if wallet exists before attempting creation
+4. **Monitor gas costs**: Track gas usage for optimization
+5. **Test on testnet**: Always test wallet creation on testnet first
+
+## Related Endpoints
+
+- **[Predict Wallet](/docs/en/api-reference/predict-wallet)** - Predict the wallet address before creation
+- **[Check Wallet](/docs/en/api-reference/check-wallet)** - Verify wallet existence
+- **[Execute Operation](/docs/en/api-reference/execute-operation)** - Start using your wallet
+
+---
+
+<div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <div className="text-green-800 dark:text-green-200">
+    <strong>✅ Success:</strong> Once created, your wallet is ready to use. You can immediately start executing transactions and managing your Account Abstraction wallet.
+  </div>
+</div>
+
+<div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+  <div className="text-yellow-800 dark:text-yellow-200">
+    <strong>⚠️ Important:</strong> Make sure to fund the predicted wallet address before creation. The wallet needs native tokens to pay for deployment gas costs.
+  </div>
+</div>

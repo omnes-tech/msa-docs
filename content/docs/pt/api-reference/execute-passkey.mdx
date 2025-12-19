@@ -1,0 +1,71 @@
+---
+title: Executar Passkey
+description: Executar operações com validação passkey.
+---
+
+Executar operações com validação passkey.
+
+## Endpoint
+
+```
+POST /executePasskey
+```
+
+## Descrição
+
+Executa operações com validação passkey. Este endpoint requer assinaturas passkey que podem ser obtidas do endpoint passkey hash.
+
+## Corpo da Solicitação
+
+```json
+{
+  "operations": [
+    {
+      "encodedUserOp": "0x...",
+      "userOpHash": "0x...",
+      "validationData": {
+        "signature": "base64-signature",
+        "authenticatorData": "base64-data",
+        "clientDataJSON": "base64-json",
+        "validAfter": 1718733600,
+        "validUnitl": 1718733700
+      }
+    }
+  ],
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
+  }
+}
+```
+
+## Resposta
+
+Mesmo que o endpoint [Executar Operação](/docs/pt/api-reference/execute-operation).
+
+## Casos de Uso
+
+- **Transações sem senha**: Executar transações usando autenticação biométrica
+- **Segurança aprimorada**: Combinar validação passkey com Account Abstraction
+- **UX amigável**: Fornecer experiência de assinatura de transação perfeita
+- **Aplicações móveis**: Aproveitar biometria do dispositivo para assinatura de transações
+
+## Melhores Práticas
+
+1. **Obter hash passkey primeiro**: Use o endpoint passkey hash para obter o hash para assinar
+2. **Validar dados passkey**: Garanta que as assinaturas passkey sejam válidas antes da execução
+3. **Tratar janelas de tempo**: Use validAfter e validUntil para validação baseada em tempo
+4. **Tratamento de erros**: Verifique erros de validação passkey
+
+## Endpoints Relacionados
+
+- **[Hash Passkey](/docs/pt/api-reference/passkey-hash)** - Obter hash para assinar com passkey
+- **[Executar Operação](/docs/pt/api-reference/execute-operation)** - Executar operações padrão
+
+---
+
+<div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <div className="text-green-800 dark:text-green-200">
+    <strong>✅ Sucesso:</strong> A execução passkey fornece uma experiência de transação perfeita e sem senha. Os usuários podem assinar transações usando autenticação biométrica em seus dispositivos.
+  </div>
+</div>

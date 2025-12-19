@@ -1,0 +1,144 @@
+---
+title: Obter Recibo
+description: Obter recibos de transação por hash de transação.
+---
+
+Obter recibos de transação por hash de transação.
+
+## Endpoint
+
+```
+POST /receipt
+```
+
+## Descrição
+
+Recupera recibos de transação da blockchain por hash de transação. Inclui logs decodificados e dados de eventos.
+
+## Corpo da Solicitação
+
+```json
+{
+  "txHashes": [
+    "0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938"
+  ],
+  "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+```
+
+## Resposta
+
+```json
+{
+  "requestStatus": 200,
+  "receipts": [
+    {
+      "status": 1,
+      "txHash": "0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938",
+      "gasUsed": 34111,
+      "cumulativeGasUsed": 17033026,
+      "effectiveGasPrice": "1136849215",
+      "logs": []
+    }
+  ]
+}
+```
+
+### Campos da Resposta
+
+- **`requestStatus`** (integer): Código de status HTTP da solicitação
+- **`receipts`** (array): Array de recibos de transação
+  - **`status`** (integer): Status da transação (0 - falhou, 1 - sucesso)
+  - **`txHash`** (string): Hash da transação
+  - **`gasUsed`** (integer): Gas usado pela transação
+  - **`cumulativeGasUsed`** (integer): Gas cumulativo usado no bloco
+  - **`effectiveGasPrice`** (string): Preço efetivo do gas
+  - **`logs`** (array): Logs de eventos decodificados da transação
+
+## Exemplo de Solicitação
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/receipt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "txHashes": [
+      "0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938"
+    ],
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/receipt', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    txHashes: [
+      '0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938',
+    ],
+    rpc: 'https://polygon-amoy.infura.io/v3/{key}',
+  }),
+});
+
+const result = await response.json();
+console.log('Status da transação:', result.receipts[0].status === 1 ? 'Sucesso' : 'Falhou');
+console.log('Gas usado:', result.receipts[0].gasUsed);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/receipt"
+payload = {
+    "txHashes": [
+        "0x066a0269a55aa42498da9993f01b9bfc82517330669c240807ed1b94b2acd938"
+    ],
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}"
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Status da transação: {'Sucesso' if result['receipts'][0]['status'] == 1 else 'Falhou'}")
+print(f"Gas usado: {result['receipts'][0]['gasUsed']}")
+```
+
+</Tab>
+</Tabs>
+
+## Casos de Uso
+
+- **Rastreamento de transações**: Monitorar status e conclusão de transações
+- **Registro de eventos**: Recuperar logs de eventos decodificados de transações
+- **Análise de gas**: Analisar uso de gas para otimização
+- **Verificação em lote**: Verificar múltiplas transações de uma vez
+
+## Melhores Práticas
+
+1. **Aguardar confirmação**: Aguarde confirmação da transação antes de buscar o recibo
+2. **Tratar múltiplos recibos**: Processe array de recibos para operações em lote
+3. **Verificar códigos de status**: Verifique status da transação antes de processar logs
+4. **Decodificar logs**: Use logs decodificados para rastreamento de eventos
+
+## Endpoints Relacionados
+
+- **[Executar Operação](/docs/pt/api-reference/execute-operation)** - Executar transações
+- **[Filtrar Eventos](/docs/pt/api-reference/filter-events)** - Filtrar eventos da blockchain
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> Os recibos incluem logs de eventos decodificados, facilitando o rastreamento de eventos de contratos sem decodificação manual.
+  </div>
+</div>

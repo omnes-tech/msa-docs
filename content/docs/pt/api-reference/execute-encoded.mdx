@@ -1,0 +1,72 @@
+---
+title: Executar Codificado
+description: Executar UserOperations pré-codificadas.
+---
+
+Executar UserOperations pré-codificadas.
+
+## Endpoint
+
+```
+POST /executeEncoded
+```
+
+## Descrição
+
+Executa UserOperations pré-codificadas que foram obtidas do endpoint estimate gas. Isso é útil quando você quer separar as etapas de estimativa de gas e execução.
+
+## Corpo da Solicitação
+
+```json
+{
+  "operations": [
+    {
+      "encodedUserOp": "0x...",
+      "userOpHash": "0x...",
+      "walletCustody": 2,
+      "validAfter": 1718733600,
+      "validUnitl": 1718733700,
+      "signature": "0x..."
+    }
+  ],
+  "settings": {
+    "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+    "signer": {
+      "clientId": "your-fireblocks-client-id",
+      "versionId": "1"
+    }
+  }
+}
+```
+
+## Resposta
+
+Mesmo que o endpoint [Executar Operação](/docs/pt/api-reference/execute-operation).
+
+## Casos de Uso
+
+- **Controle avançado de gas**: Separar estimativa de gas da execução para controle refinado
+- **Operações pré-assinadas**: Executar operações que foram codificadas e assinadas anteriormente
+- **Otimização em lote**: Otimizar gas para múltiplas operações antes da execução
+- **Fila de transações**: Enfileirar transações para execução em momentos ideais
+
+## Melhores Práticas
+
+1. **Estimar primeiro**: Sempre use o endpoint estimate gas antes da codificação
+2. **Validar dados codificados**: Garanta que as UserOperations codificadas sejam válidas antes da execução
+3. **Tratar assinaturas**: Forneça assinaturas adequadas para operações codificadas
+4. **Monitorar execução**: Acompanhe o status da execução e trate falhas
+
+## Endpoints Relacionados
+
+- **[Estimar Gas](/docs/pt/api-reference/estimate-gas)** - Obter UserOperations codificadas
+- **[Executar Operação](/docs/pt/api-reference/execute-operation)** - Executar operações diretamente
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> Use este endpoint quando precisar de mais controle sobre estimativa de gas e tempo de execução. Perfeito para casos de uso avançados que requerem gerenciamento refinado de gas.
+  </div>
+</div>

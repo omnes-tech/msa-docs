@@ -1,0 +1,61 @@
+---
+title: Unstuck Transaction
+description: Resolve stuck transactions.
+---
+
+Resolve stuck transactions.
+
+## Endpoint
+
+```
+POST /unstuck
+```
+
+## Description
+
+Resolves stuck transactions by replacing them with higher gas price transactions.
+
+## Request Body
+
+```json
+{
+  "rpc": "https://polygon-amoy.infura.io/v3/{key}",
+  "signer": {
+    "clientId": "your-fireblocks-client-id",
+    "versionId": "1"
+  },
+  "percentTxGasOvershoot": 50,
+  "percentTxGasPriceOvershoot": "50"
+}
+```
+
+## Response
+
+Same as [Execute Operation](/docs/en/api-reference/execute-operation) endpoint.
+
+## Use Cases
+
+- **Transaction recovery**: Resolve stuck transactions by increasing gas price
+- **Network congestion**: Handle transactions stuck due to network congestion
+- **Gas price optimization**: Replace low gas price transactions with higher ones
+- **User experience**: Automatically resolve stuck transactions for users
+
+## Best Practices
+
+1. **Monitor transactions**: Track transaction status to identify stuck transactions
+2. **Configure overshoot**: Set appropriate gas price overshoot for replacement
+3. **Handle failures**: Check for errors and handle replacement failures
+4. **User notification**: Notify users when transactions are unstuck
+
+## Related Endpoints
+
+- **[Get Receipt](/docs/en/api-reference/get-receipt)** - Check transaction status
+- **[Execute Operation](/docs/en/api-reference/execute-operation)** - Execute new transactions
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> This endpoint replaces stuck transactions with higher gas price versions. Use it when transactions are pending for extended periods due to low gas prices.
+  </div>
+</div>

@@ -1,0 +1,71 @@
+---
+title: Passkey Hash
+description: Generate passkey hashes for passkey-based operations.
+---
+
+Generate passkey hashes for passkey-based operations.
+
+## Endpoint
+
+```
+POST /passkeyHash
+```
+
+## Description
+
+Generates passkey hashes that need to be signed by passkeys. The signed hash can then be used with the execute passkey endpoint.
+
+## Request Body
+
+Same as [Execute Operation](/docs/en/api-reference/execute-operation) endpoint.
+
+## Response
+
+```json
+{
+  "status": 0,
+  "results": [
+    {
+      "userOpHash": "0x...",
+      "encodedUserOp": "0x...",
+      "aggrIndexes": [0, 1],
+      "error": null
+    }
+  ]
+}
+```
+
+### Response Fields
+
+- **`status`** (integer): The status code (0 - success)
+- **`results`** (array): Array of passkey hash results
+  - **`userOpHash`** (string): The UserOperation hash to sign
+  - **`encodedUserOp`** (string): The encoded UserOperation
+  - **`aggrIndexes`** (array): Aggregator indexes for signature aggregation
+  - **`error`** (string, nullable): Error message if hash generation failed
+
+## Use Cases
+
+- **Passkey integration**: Generate hashes for passkey-based transaction signing
+- **Biometric authentication**: Enable passwordless transaction signing
+- **Mobile wallets**: Support device-native biometric authentication
+- **Enhanced security**: Combine passkey validation with Account Abstraction
+
+## Best Practices
+
+1. **Sign with passkey**: Use the userOpHash to sign with the user's passkey
+2. **Handle aggregation**: Use aggrIndexes for signature aggregation if needed
+3. **Validate before execution**: Ensure passkey signature is valid before execute passkey
+4. **Error handling**: Check for errors in the results array
+
+## Related Endpoints
+
+- **[Execute Passkey](/docs/en/api-reference/execute-passkey)** - Execute operations with passkey signatures
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> The userOpHash returned by this endpoint needs to be signed by the user's passkey. Use WebAuthn APIs to obtain the passkey signature.
+  </div>
+</div>

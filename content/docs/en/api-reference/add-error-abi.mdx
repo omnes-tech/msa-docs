@@ -1,0 +1,155 @@
+---
+title: Add Error ABI
+description: Add custom error ABIs to the system.
+---
+
+Add custom error ABIs to the system.
+
+## Endpoint
+
+```
+POST /addError
+```
+
+## Description
+
+Adds custom error ABIs to the system for use in error decoding.
+
+## Request Body
+
+```json
+{
+  "errorABI": {
+    "type": "error",
+    "name": "ECDSAInvalidSignatureS",
+    "inputs": [
+      {
+        "name": "s",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  }
+}
+```
+
+## Response
+
+```json
+{
+  "status": 200,
+  "errorDef": "error ECDSAInvalidSignatureS(bytes32 indexed s)"
+}
+```
+
+### Response Fields
+
+- **`status`** (integer): HTTP status code (200 for success)
+- **`errorDef`** (string): The canonical error definition string
+
+## Example Request
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/addError \
+  -H "Content-Type: application/json" \
+  -d '{
+    "errorABI": {
+      "type": "error",
+      "name": "ECDSAInvalidSignatureS",
+      "inputs": [
+        {
+          "name": "s",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ]
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/addError', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    errorABI: {
+      type: 'error',
+      name: 'ECDSAInvalidSignatureS',
+      inputs: [
+        {
+          name: 's',
+          type: 'bytes32',
+          internalType: 'bytes32',
+        },
+      ],
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Error registered:', result.errorDef);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/addError"
+payload = {
+    "errorABI": {
+        "type": "error",
+        "name": "ECDSAInvalidSignatureS",
+        "inputs": [
+            {
+                "name": "s",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ]
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Error registered: {result['errorDef']}")
+```
+
+</Tab>
+</Tabs>
+
+## Use Cases
+
+- **Custom errors**: Register errors from custom smart contracts
+- **Error decoding**: Enable proper decoding of custom contract errors
+- **Debugging**: Better error messages for debugging failed transactions
+- **Integration**: Support integration with any EVM-compatible contract
+
+## Best Practices
+
+1. **Register before use**: Add error ABIs before transactions that might use them
+2. **Use correct format**: Ensure ABI format matches Solidity error definition
+3. **Handle duplicates**: Check if error already exists before adding
+4. **Validate ABI**: Ensure error ABI is valid before registration
+
+## Related Endpoints
+
+- **[Get Receipt](/docs/en/api-reference/get-receipt)** - Get receipts with decoded error messages
+- **[Add Event ABI](/docs/en/api-reference/add-event-abi)** - Register event ABIs
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Tip:</strong> Register custom error ABIs to get better error messages when transactions fail. This helps with debugging and provides clearer error information.
+  </div>
+</div>

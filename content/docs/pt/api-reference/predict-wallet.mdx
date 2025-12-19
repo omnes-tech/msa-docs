@@ -1,0 +1,198 @@
+---
+title: Prever Carteira
+description: Prever endereços de carteira antes da criação com base em salt e tipo de custódia.
+---
+
+Prever endereços de carteira antes da criação com base em salt e tipo de custódia.
+
+## Endpoint
+
+```
+POST /predict
+```
+
+## Descrição
+
+Prevê o endereço da carteira que será gerado para um determinado salt e tipo de custódia. Isso é útil para determinar o endereço da carteira antes de realmente implantá-la na blockchain.
+
+## Corpo da Solicitação
+
+```json
+{
+  "accounts": [
+    {
+      "salt": "example@gmail.com",
+      "walletCustody": 2
+    }
+  ],
+  "settings": {
+    "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+    "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+    "beaconAdminCreationCode": "0x60a0604052..."
+  }
+}
+```
+
+### Parâmetros da Solicitação
+
+#### `accounts` (array, obrigatório)
+
+Array de solicitações de previsão de conta.
+
+- **`salt`** (string, obrigatório): O salt para prever o endereço da carteira
+- **`walletCustody`** (integer, obrigatório): A classificação de custódia da carteira (1-5)
+
+#### `settings` (object, obrigatório)
+
+Configurações para a previsão.
+
+- **`factory`** (string, obrigatório): O endereço da factory da chain fornecida
+- **`beaconAdminAddress`** (string, obrigatório): O endereço do beacon admin da chain fornecida
+- **`beaconAdminCreationCode`** (string, obrigatório): O código de criação do beacon da chain fornecida
+
+## Resposta
+
+```json
+[
+  {
+    "salt": "example@gmail.com",
+    "wallet": "0x28097eF2268B553783D9c32A33ECb1bB78B209F3",
+    "error": null
+  }
+]
+```
+
+### Campos da Resposta
+
+- **`salt`** (string): O salt usado para a previsão
+- **`wallet`** (string): O endereço da carteira previsto
+- **`error`** (string, nullable): Mensagem de erro se a previsão falhou
+
+## Exemplo de Solicitação
+
+<Tabs items={['cURL', 'TypeScript', 'Python']}>
+<Tab value="cURL">
+
+```bash
+curl -X POST https://api.msa.omnes.tech/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accounts": [
+      {
+        "salt": "user@example.com",
+        "walletCustody": 2
+      }
+    ],
+    "settings": {
+      "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+      "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+      "beaconAdminCreationCode": "0x60a0604052..."
+    }
+  }'
+```
+
+</Tab>
+<Tab value="TypeScript">
+
+```typescript
+const response = await fetch('https://api.msa.omnes.tech/predict', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    accounts: [
+      {
+        salt: 'user@example.com',
+        walletCustody: 2,
+      },
+    ],
+    settings: {
+      factory: '0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE',
+      beaconAdminAddress: '0x183A1019242865C39f06C78716933259A161E99A',
+      beaconAdminCreationCode: '0x60a0604052...',
+    },
+  }),
+});
+
+const result = await response.json();
+console.log('Carteira prevista:', result[0].wallet);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import requests
+
+url = "https://api.msa.omnes.tech/predict"
+payload = {
+    "accounts": [
+        {
+            "salt": "user@example.com",
+            "walletCustody": 2
+        }
+    ],
+    "settings": {
+        "factory": "0x5102Aa0EA1f1A88a6125B74ADf673891EB6393cE",
+        "beaconAdminAddress": "0x183A1019242865C39f06C78716933259A161E99A",
+        "beaconAdminCreationCode": "0x60a0604052..."
+    }
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+print(f"Carteira prevista: {result[0]['wallet']}")
+```
+
+</Tab>
+</Tabs>
+
+## Respostas de Erro
+
+### 400 Bad Request
+
+Parâmetros de solicitação inválidos.
+
+```json
+{
+  "error": "invalid salt format"
+}
+```
+
+### 422 Unprocessable Entity
+
+Solicitação válida mas a previsão falhou.
+
+```json
+{
+  "error": "internal application error"
+}
+```
+
+## Casos de Uso
+
+- **Pré-financiamento de carteiras**: Prever o endereço antes da implantação para financiá-lo
+- **Verificação de endereço**: Confirmar que os endereços da carteira correspondem às expectativas
+- **Operações em lote**: Prever múltiplos endereços para operações em massa
+- **Testes**: Verificar a lógica de geração de endereços antes da produção
+
+## Melhores Práticas
+
+1. **Sempre prever antes de criar**: Preveja o endereço da carteira primeiro para garantir que corresponde às suas expectativas
+2. **Usar salts consistentes**: O mesmo salt sempre gerará o mesmo endereço
+3. **Validar endereços**: Verifique se os endereços previstos correspondem aos seus requisitos antes de financiar
+4. **Tratar erros graciosamente**: Verifique erros no array de resposta
+
+## Endpoints Relacionados
+
+- **[Criar Carteira](/docs/pt/api-reference/create-wallet)** - Implantar a carteira prevista
+- **[Verificar Carteira](/docs/pt/api-reference/check-wallet)** - Verificar existência da carteira
+
+---
+
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+  <div className="text-blue-800 dark:text-blue-200">
+    <strong>💡 Dica:</strong> O endereço previsto é determinístico - o mesmo salt e tipo de custódia sempre gerarão o mesmo endereço. Isso permite financiar carteiras antes da implantação.
+  </div>
+</div>
